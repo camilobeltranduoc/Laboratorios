@@ -27,7 +27,7 @@ COPY --from=build /app/target/*.jar app.jar
 COPY --from=build /app/src/main/resources/wallet /app/wallet
 
 # Expose port
-EXPOSE 8083
+EXPOSE 8082
 
 # Set active profile to cloud
 ENV SPRING_PROFILES_ACTIVE=cloud

@@ -1,26 +1,22 @@
-# Use OpenJDK 17
-FROM eclipse-temurin:17-jdk-alpine AS build
+# Use Maven with OpenJDK 21
+FROM maven:3.9-eclipse-temurin-21-alpine AS build
 
 WORKDIR /app
 
-# Copy Maven wrapper and pom.xml
-COPY .mvn/ .mvn
-COPY mvnw pom.xml ./
+# Copy pom.xml
+COPY pom.xml ./
 
 # Download dependencies
-RUN ./mvnw dependency:go-offline
+RUN mvn dependency:go-offline
 
 # Copy source code
 COPY src ./src
 
-# Copy wallet directory
-COPY src/main/resources/wallet ./src/main/resources/wallet
-
 # Build the application
-RUN ./mvnw clean package -DskipTests
+RUN mvn clean package -DskipTests
 
 # Production stage
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 
