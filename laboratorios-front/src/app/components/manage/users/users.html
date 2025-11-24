@@ -1,0 +1,296 @@
+<div class="container-fluid min-vh-100 bg-light">
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">Sistema de Laboratorios</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link" routerLink="/dashboard/admin">Dashboard</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" routerLink="/perfil">Mi Perfil</a>
+          </li>
+          <li class="nav-item">
+            <button class="btn btn-outline-light btn-sm ms-2" (click)="logout()">Cerrar Sesión</button>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container py-4">
+    <div class="row mb-4">
+      <div class="col-12">
+        <h1 class="display-5 mb-3">Gestión de Usuarios</h1>
+        <p class="lead">Administrar usuarios del sistema</p>
+      </div>
+    </div>
+
+    <div class="row mb-4">
+      <div class="col-12 col-md-8">
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-search"></i></span>
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Buscar por nombre, apellido, email o RUT..."
+            (input)="onSearch($event)"
+          />
+        </div>
+      </div>
+      <div class="col-12 col-md-4 mt-2 mt-md-0">
+        <button class="btn btn-primary w-100" (click)="openCreateModal()">
+          <i class="bi bi-plus-circle me-2"></i>Nuevo Usuario
+        </button>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-12">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Apellido</th>
+                    <th>RUT</th>
+                    <th>Email</th>
+                    <th>Teléfono</th>
+                    <th>Rol</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @if (filteredUsers.length > 0) {
+                    @for (user of filteredUsers; track user.id) {
+                      <tr>
+                        <td>{{ user.id }}</td>
+                        <td>{{ user.nombre }}</td>
+                        <td>{{ user.apellido }}</td>
+                        <td>{{ user.rut }}</td>
+                        <td>{{ user.email }}</td>
+                        <td>{{ user.telefono }}</td>
+                        <td>
+                          <span class="badge"
+                            [class.bg-primary]="user.rol === 'ADMINISTRADOR'"
+                            [class.bg-success]="user.rol === 'MEDICO'"
+                            [class.bg-info]="user.rol === 'PACIENTE'"
+                            [class.bg-warning]="user.rol === 'LABORATORISTA'">
+                            {{ user.rol }}
+                          </span>
+                        </td>
+                        <td>
+                          <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary" (click)="openEditModal(user)">
+                              <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-outline-danger" (click)="deleteUser(user.id)">
+                              <i class="bi bi-trash"></i>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    }
+                  } @else {
+                    <tr>
+                      <td colspan="8" class="text-center text-muted">No se encontraron usuarios</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+@if (showModal) {
+  <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">{{ editingUser ? 'Editar Usuario' : 'Nuevo Usuario' }}</h5>
+          <button type="button" class="btn-close" (click)="closeModal()"></button>
+        </div>
+        <div class="modal-body">
+          <form [formGroup]="userForm" (ngSubmit)="onSubmit()">
+            <div class="row">
+              <div class="col-12 col-md-6 mb-3">
+                <label for="nombre" class="form-label">Nombre *</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="nombre"
+                  formControlName="nombre"
+                  [class.is-invalid]="nombre?.invalid && nombre?.touched"
+                />
+                @if (nombre?.invalid && nombre?.touched) {
+                  <div class="invalid-feedback">
+                    @if (nombre?.errors?.['required']) { El nombre es obligatorio }
+                    @if (nombre?.errors?.['minlength']) { Mínimo 2 caracteres }
+                  </div>
+                }
+              </div>
+
+              <div class="col-12 col-md-6 mb-3">
+                <label for="apellido" class="form-label">Apellido *</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="apellido"
+                  formControlName="apellido"
+                  [class.is-invalid]="apellido?.invalid && apellido?.touched"
+                />
+                @if (apellido?.invalid && apellido?.touched) {
+                  <div class="invalid-feedback">
+                    @if (apellido?.errors?.['required']) { El apellido es obligatorio }
+                    @if (apellido?.errors?.['minlength']) { Mínimo 2 caracteres }
+                  </div>
+                }
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-12 col-md-6 mb-3">
+                <label for="rut" class="form-label">RUT *</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="rut"
+                  formControlName="rut"
+                  placeholder="12345678-9"
+                  [class.is-invalid]="rut?.invalid && rut?.touched"
+                />
+                @if (rut?.invalid && rut?.touched) {
+                  <div class="invalid-feedback">
+                    @if (rut?.errors?.['required']) { El RUT es obligatorio }
+                    @if (rut?.errors?.['pattern']) { Formato inválido (ej: 12345678-9) }
+                  </div>
+                }
+              </div>
+
+              <div class="col-12 col-md-6 mb-3">
+                <label for="email" class="form-label">Email *</label>
+                <input
+                  type="email"
+                  class="form-control"
+                  id="email"
+                  formControlName="email"
+                  [class.is-invalid]="email?.invalid && email?.touched"
+                />
+                @if (email?.invalid && email?.touched) {
+                  <div class="invalid-feedback">
+                    @if (email?.errors?.['required']) { El email es obligatorio }
+                    @if (email?.errors?.['email']) { Email inválido }
+                  </div>
+                }
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="password" class="form-label">Contraseña *</label>
+              <input
+                type="password"
+                class="form-control"
+                id="password"
+                formControlName="password"
+                [class.is-invalid]="password?.invalid && password?.touched"
+              />
+              <div class="mt-2">
+                <small class="d-block" [class.text-success]="!password?.errors?.['minLength']" [class.text-danger]="password?.errors?.['minLength']">
+                  ✓ Mínimo 8 caracteres
+                </small>
+                <small class="d-block" [class.text-success]="!password?.errors?.['maxLength']" [class.text-danger]="password?.errors?.['maxLength']">
+                  ✓ Máximo 20 caracteres
+                </small>
+                <small class="d-block" [class.text-success]="!password?.errors?.['hasSpecialChar']" [class.text-danger]="password?.errors?.['hasSpecialChar']">
+                  ✓ Al menos un carácter especial (!@#$%^&*)
+                </small>
+                <small class="d-block" [class.text-success]="!password?.errors?.['hasNumber']" [class.text-danger]="password?.errors?.['hasNumber']">
+                  ✓ Al menos un número
+                </small>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-12 col-md-6 mb-3">
+                <label for="telefono" class="form-label">Teléfono *</label>
+                <input
+                  type="tel"
+                  class="form-control"
+                  id="telefono"
+                  formControlName="telefono"
+                  placeholder="+56912345678"
+                  [class.is-invalid]="telefono?.invalid && telefono?.touched"
+                />
+                @if (telefono?.invalid && telefono?.touched) {
+                  <div class="invalid-feedback">
+                    @if (telefono?.errors?.['required']) { El teléfono es obligatorio }
+                    @if (telefono?.errors?.['pattern']) { Formato: +56912345678 }
+                  </div>
+                }
+              </div>
+
+              <div class="col-12 col-md-6 mb-3">
+                <label for="fechaNacimiento" class="form-label">Fecha de Nacimiento *</label>
+                <input
+                  type="date"
+                  class="form-control"
+                  id="fechaNacimiento"
+                  formControlName="fechaNacimiento"
+                  [class.is-invalid]="fechaNacimiento?.invalid && fechaNacimiento?.touched"
+                />
+                @if (fechaNacimiento?.invalid && fechaNacimiento?.touched) {
+                  <div class="invalid-feedback">
+                    La fecha de nacimiento es obligatoria
+                  </div>
+                }
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="direccion" class="form-label">Dirección *</label>
+              <input
+                type="text"
+                class="form-control"
+                id="direccion"
+                formControlName="direccion"
+                [class.is-invalid]="direccion?.invalid && direccion?.touched"
+              />
+              @if (direccion?.invalid && direccion?.touched) {
+                <div class="invalid-feedback">
+                  La dirección es obligatoria
+                </div>
+              }
+            </div>
+
+            <div class="mb-3">
+              <label for="rol" class="form-label">Rol *</label>
+              <select class="form-select" id="rol" formControlName="rol">
+                <option value="ADMINISTRADOR">Administrador</option>
+                <option value="MEDICO">Médico</option>
+                <option value="PACIENTE">Paciente</option>
+                <option value="LABORATORISTA">Laboratorista</option>
+              </select>
+            </div>
+
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancelar</button>
+              <button type="submit" class="btn btn-primary" [disabled]="userForm.invalid">
+                {{ editingUser ? 'Actualizar' : 'Crear' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+}

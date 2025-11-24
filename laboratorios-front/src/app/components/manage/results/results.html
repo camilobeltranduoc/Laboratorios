@@ -1,0 +1,257 @@
+<div class="container-fluid min-vh-100 bg-light">
+  <nav class="navbar navbar-expand-lg navbar-dark bg-info">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">Sistema de Laboratorios</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link" routerLink="/dashboard/admin">Dashboard</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" routerLink="/perfil">Mi Perfil</a>
+          </li>
+          <li class="nav-item">
+            <button class="btn btn-outline-light btn-sm ms-2" (click)="logout()">Cerrar Sesión</button>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container py-4">
+    <div class="row mb-4">
+      <div class="col-12">
+        <h1 class="display-5 mb-3">Gestión de Resultados</h1>
+        <p class="lead">Administrar resultados de exámenes médicos</p>
+      </div>
+    </div>
+
+    <div class="row mb-4">
+      <div class="col-12 col-md-8">
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-search"></i></span>
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Buscar por paciente, laboratorio, tipo de examen o resultado..."
+            (input)="onSearch($event)"
+          />
+        </div>
+      </div>
+      <div class="col-12 col-md-4 mt-2 mt-md-0">
+        <button class="btn btn-info w-100 text-white" (click)="openCreateModal()">
+          <i class="bi bi-plus-circle me-2"></i>Nuevo Resultado
+        </button>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-12">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Paciente</th>
+                    <th>Laboratorio</th>
+                    <th>Tipo de Examen</th>
+                    <th>Resultado</th>
+                    <th>Fecha</th>
+                    <th>Notas</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @if (filteredResults.length > 0) {
+                    @for (result of filteredResults; track result.id) {
+                      <tr>
+                        <td>{{ result.id }}</td>
+                        <td>
+                          <i class="bi bi-person-fill text-primary me-1"></i>
+                          {{ result.patientName }}
+                        </td>
+                        <td>
+                          <i class="bi bi-building text-success me-1"></i>
+                          {{ result.labName }}
+                        </td>
+                        <td>{{ result.testType }}</td>
+                        <td>
+                          <span class="badge bg-info">{{ result.result }}</span>
+                        </td>
+                        <td>{{ result.date }}</td>
+                        <td>
+                          <small class="text-muted">{{ result.notes || 'Sin notas' }}</small>
+                        </td>
+                        <td>
+                          <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary" (click)="openEditModal(result)">
+                              <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-outline-danger" (click)="deleteResult(result.id)">
+                              <i class="bi bi-trash"></i>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    }
+                  } @else {
+                    <tr>
+                      <td colspan="8" class="text-center text-muted">No se encontraron resultados</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row mt-4">
+      <div class="col-12">
+        <div class="alert alert-info">
+          <i class="bi bi-info-circle me-2"></i>
+          <strong>Total de resultados:</strong> {{ results.length }}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+@if (showModal) {
+  <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header bg-info text-white">
+          <h5 class="modal-title">{{ editingResult ? 'Editar Resultado' : 'Nuevo Resultado' }}</h5>
+          <button type="button" class="btn-close btn-close-white" (click)="closeModal()"></button>
+        </div>
+        <div class="modal-body">
+          <form [formGroup]="resultForm" (ngSubmit)="onSubmit()">
+            <div class="row">
+              <div class="col-12 col-md-6 mb-3">
+                <label for="patientId" class="form-label">Paciente *</label>
+                <select
+                  class="form-select"
+                  id="patientId"
+                  formControlName="patientId"
+                  [class.is-invalid]="patientId?.invalid && patientId?.touched"
+                >
+                  <option value="">Seleccione un paciente</option>
+                  @for (patient of patients; track patient.id) {
+                    <option [value]="patient.id">{{ patient.nombre }} {{ patient.apellido }} ({{ patient.rut }})</option>
+                  }
+                </select>
+                @if (patientId?.invalid && patientId?.touched) {
+                  <div class="invalid-feedback">
+                    Debe seleccionar un paciente
+                  </div>
+                }
+              </div>
+
+              <div class="col-12 col-md-6 mb-3">
+                <label for="labId" class="form-label">Laboratorio *</label>
+                <select
+                  class="form-select"
+                  id="labId"
+                  formControlName="labId"
+                  [class.is-invalid]="labId?.invalid && labId?.touched"
+                >
+                  <option value="">Seleccione un laboratorio</option>
+                  @for (lab of labs; track lab.id) {
+                    <option [value]="lab.id">{{ lab.name }}</option>
+                  }
+                </select>
+                @if (labId?.invalid && labId?.touched) {
+                  <div class="invalid-feedback">
+                    Debe seleccionar un laboratorio
+                  </div>
+                }
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-12 col-md-6 mb-3">
+                <label for="testType" class="form-label">Tipo de Examen *</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="testType"
+                  formControlName="testType"
+                  placeholder="Ej: Hemograma, Glucosa, etc."
+                  [class.is-invalid]="testType?.invalid && testType?.touched"
+                />
+                @if (testType?.invalid && testType?.touched) {
+                  <div class="invalid-feedback">
+                    @if (testType?.errors?.['required']) {
+                      El tipo de examen es obligatorio
+                    }
+                    @if (testType?.errors?.['minlength']) {
+                      Mínimo 3 caracteres
+                    }
+                  </div>
+                }
+              </div>
+
+              <div class="col-12 col-md-6 mb-3">
+                <label for="date" class="form-label">Fecha *</label>
+                <input
+                  type="date"
+                  class="form-control"
+                  id="date"
+                  formControlName="date"
+                  [class.is-invalid]="date?.invalid && date?.touched"
+                />
+                @if (date?.invalid && date?.touched) {
+                  <div class="invalid-feedback">
+                    La fecha es obligatoria
+                  </div>
+                }
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="result" class="form-label">Resultado *</label>
+              <input
+                type="text"
+                class="form-control"
+                id="result"
+                formControlName="result"
+                placeholder="Ej: Normal, Positivo, Negativo, etc."
+                [class.is-invalid]="result?.invalid && result?.touched"
+              />
+              @if (result?.invalid && result?.touched) {
+                <div class="invalid-feedback">
+                  El resultado es obligatorio
+                </div>
+              }
+            </div>
+
+            <div class="mb-3">
+              <label for="notes" class="form-label">Notas (Opcional)</label>
+              <textarea
+                class="form-control"
+                id="notes"
+                formControlName="notes"
+                rows="3"
+                placeholder="Observaciones adicionales..."
+              ></textarea>
+            </div>
+
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancelar</button>
+              <button type="submit" class="btn btn-info text-white" [disabled]="resultForm.invalid">
+                <i class="bi bi-save me-2"></i>{{ editingResult ? 'Actualizar' : 'Crear' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+}

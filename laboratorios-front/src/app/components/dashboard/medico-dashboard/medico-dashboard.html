@@ -1,0 +1,168 @@
+<div class="container-fluid min-vh-100 bg-light">
+  <nav class="navbar navbar-expand-lg navbar-dark bg-success">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">Sistema de Laboratorios</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <span class="nav-link text-white">
+              Dr. {{ currentUser?.nombre }} {{ currentUser?.apellido }}
+            </span>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" routerLink="/perfil">Mi Perfil</a>
+          </li>
+          <li class="nav-item">
+            <button class="btn btn-outline-light btn-sm ms-2" (click)="logout()">Cerrar Sesión</button>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container py-4">
+    <div class="row mb-4">
+      <div class="col-12">
+        <h1 class="display-5 mb-3">Dashboard de Médico</h1>
+        <p class="lead">Bienvenido Dr. {{ currentUser?.nombre }} {{ currentUser?.apellido }}</p>
+      </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+      <div class="col-12 col-md-6 col-lg-4">
+        <div class="card shadow-sm h-100 border-success">
+          <div class="card-body text-center">
+            <div class="display-4 text-success mb-3">
+              <i class="bi bi-file-medical-fill"></i>
+            </div>
+            <h3 class="card-title">{{ totalResults }}</h3>
+            <p class="card-text text-muted">Resultados en el Sistema</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-md-6 col-lg-4">
+        <div class="card shadow-sm h-100 border-info">
+          <div class="card-body text-center">
+            <div class="display-4 text-info mb-3">
+              <i class="bi bi-building"></i>
+            </div>
+            <h3 class="card-title">{{ labs.length }}</h3>
+            <p class="card-text text-muted">Laboratorios Disponibles</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-md-6 col-lg-4">
+        <div class="card shadow-sm h-100 border-warning">
+          <div class="card-body text-center">
+            <div class="display-4 text-warning mb-3">
+              <i class="bi bi-clipboard-check"></i>
+            </div>
+            <h3 class="card-title">{{ recentResults.length }}</h3>
+            <p class="card-text text-muted">Resultados Recientes</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="card shadow-sm">
+          <div class="card-header bg-success text-white">
+            <h5 class="mb-0">Resultados Recientes</h5>
+          </div>
+          <div class="card-body">
+            @if (recentResults.length > 0) {
+              <div class="table-responsive">
+                <table class="table table-hover">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Paciente</th>
+                      <th>Laboratorio</th>
+                      <th>Tipo de Examen</th>
+                      <th>Resultado</th>
+                      <th>Fecha</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (result of recentResults; track result.id) {
+                      <tr>
+                        <td>{{ result.id }}</td>
+                        <td>{{ result.patientName }}</td>
+                        <td>{{ result.labName }}</td>
+                        <td>{{ result.testType }}</td>
+                        <td>
+                          <span class="badge bg-info">{{ result.result }}</span>
+                        </td>
+                        <td>{{ result.date }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            } @else {
+              <p class="text-muted mb-0">No hay resultados recientes</p>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="card shadow-sm">
+          <div class="card-header bg-success text-white">
+            <h5 class="mb-0">Laboratorios Disponibles</h5>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              @for (lab of labs; track lab.id) {
+                <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                  <div class="card border-success">
+                    <div class="card-body text-center">
+                      <i class="bi bi-building display-6 text-success mb-2"></i>
+                      <h6 class="card-title">{{ lab.name }}</h6>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="card shadow-sm">
+          <div class="card-header bg-success text-white">
+            <h5 class="mb-0">Acciones Disponibles</h5>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-12 col-md-6">
+                <div class="d-grid">
+                  <a routerLink="/manage/results" class="btn btn-outline-success btn-lg">
+                    <i class="bi bi-eye me-2"></i>Ver y Gestionar Resultados
+                  </a>
+                </div>
+              </div>
+              <div class="col-12 col-md-6">
+                <div class="d-grid">
+                  <a routerLink="/manage/results" class="btn btn-outline-info btn-lg">
+                    <i class="bi bi-plus-circle me-2"></i>Crear Nuevo Resultado
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

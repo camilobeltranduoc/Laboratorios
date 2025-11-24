@@ -1,0 +1,56 @@
+<div class="container mt-4">
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+      <div class="card shadow">
+        <div class="card-body p-4">
+          <h2 class="text-center mb-4">Mi Perfil</h2>
+
+          @if (successMessage) {
+            <div class="alert alert-success" role="alert">
+              {{ successMessage }}
+            </div>
+          }
+
+          @if (currentUser) {
+            <form [formGroup]="profileForm" (ngSubmit)="onSubmit()">
+              <div class="row">
+                <div class="col-12 col-md-6 mb-3">
+                  <label class="form-label">Nombre</label>
+                  <input type="text" class="form-control" formControlName="nombre" />
+                </div>
+                <div class="col-12 col-md-6 mb-3">
+                  <label class="form-label">Apellido</label>
+                  <input type="text" class="form-control" formControlName="apellido" />
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-control" [value]="currentUser.email" disabled />
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">RUT</label>
+                <input type="text" class="form-control" [value]="currentUser.rut" disabled />
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Teléfono</label>
+                <input type="tel" class="form-control" formControlName="telefono" />
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Dirección</label>
+                <input type="text" class="form-control" formControlName="direccion" />
+              </div>
+
+              <button type="submit" class="btn btn-primary w-100" [disabled]="profileForm.invalid">
+                Guardar Cambios
+              </button>
+            </form>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,145 @@
+<div class="container-fluid min-vh-100 bg-light">
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">Sistema de Laboratorios</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <span class="nav-link text-white">
+              {{ currentUser?.nombre }} {{ currentUser?.apellido }} ({{ currentUser?.rol }})
+            </span>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" routerLink="/perfil">Mi Perfil</a>
+          </li>
+          <li class="nav-item">
+            <button class="btn btn-outline-light btn-sm ms-2" (click)="logout()">Cerrar Sesión</button>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container py-4">
+    <div class="row mb-4">
+      <div class="col-12">
+        <h1 class="display-5 mb-3">Dashboard de Administrador</h1>
+        <p class="lead">Bienvenido al panel de administración del Sistema de Gestión de Laboratorios Médicos</p>
+      </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+      <div class="col-12 col-md-6 col-lg-4">
+        <div class="card shadow-sm h-100">
+          <div class="card-body text-center">
+            <div class="display-4 text-primary mb-3">
+              <i class="bi bi-people-fill"></i>
+            </div>
+            <h3 class="card-title">{{ totalUsers }}</h3>
+            <p class="card-text text-muted">Total Usuarios</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-md-6 col-lg-4">
+        <div class="card shadow-sm h-100">
+          <div class="card-body text-center">
+            <div class="display-4 text-success mb-3">
+              <i class="bi bi-building"></i>
+            </div>
+            <h3 class="card-title">{{ totalLabs }}</h3>
+            <p class="card-text text-muted">Total Laboratorios</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-md-6 col-lg-4">
+        <div class="card shadow-sm h-100">
+          <div class="card-body text-center">
+            <div class="display-4 text-info mb-3">
+              <i class="bi bi-file-medical"></i>
+            </div>
+            <h3 class="card-title">{{ totalResults }}</h3>
+            <p class="card-text text-muted">Total Resultados</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="card shadow-sm">
+          <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Usuarios por Rol</h5>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-12 col-sm-6 col-md-3">
+                <div class="p-3 bg-light rounded text-center">
+                  <h6 class="text-muted">Administradores</h6>
+                  <h4 class="text-primary">{{ usersByRole['ADMINISTRADOR'] || 0 }}</h4>
+                </div>
+              </div>
+              <div class="col-12 col-sm-6 col-md-3">
+                <div class="p-3 bg-light rounded text-center">
+                  <h6 class="text-muted">Médicos</h6>
+                  <h4 class="text-success">{{ usersByRole['MEDICO'] || 0 }}</h4>
+                </div>
+              </div>
+              <div class="col-12 col-sm-6 col-md-3">
+                <div class="p-3 bg-light rounded text-center">
+                  <h6 class="text-muted">Pacientes</h6>
+                  <h4 class="text-info">{{ usersByRole['PACIENTE'] || 0 }}</h4>
+                </div>
+              </div>
+              <div class="col-12 col-sm-6 col-md-3">
+                <div class="p-3 bg-light rounded text-center">
+                  <h6 class="text-muted">Laboratoristas</h6>
+                  <h4 class="text-warning">{{ usersByRole['LABORATORISTA'] || 0 }}</h4>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="card shadow-sm">
+          <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Gestión del Sistema</h5>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-12 col-md-6 col-lg-4">
+                <div class="d-grid">
+                  <a routerLink="/manage/users" class="btn btn-outline-primary btn-lg">
+                    <i class="bi bi-people me-2"></i>Gestionar Usuarios
+                  </a>
+                </div>
+              </div>
+              <div class="col-12 col-md-6 col-lg-4">
+                <div class="d-grid">
+                  <a routerLink="/manage/labs" class="btn btn-outline-success btn-lg">
+                    <i class="bi bi-building me-2"></i>Gestionar Laboratorios
+                  </a>
+                </div>
+              </div>
+              <div class="col-12 col-md-6 col-lg-4">
+                <div class="d-grid">
+                  <a routerLink="/manage/results" class="btn btn-outline-info btn-lg">
+                    <i class="bi bi-file-medical me-2"></i>Gestionar Resultados
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

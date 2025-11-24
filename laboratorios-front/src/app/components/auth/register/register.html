@@ -1,0 +1,212 @@
+<div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center bg-light py-4">
+  <div class="row w-100 justify-content-center">
+    <div class="col-12 col-md-10 col-lg-8 col-xl-6">
+      <div class="card shadow">
+        <div class="card-body p-4">
+          <h2 class="text-center mb-4">Registro de Usuario</h2>
+
+          @if (errorMessage) {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+              {{ errorMessage }}
+              <button type="button" class="btn-close" (click)="errorMessage = ''"></button>
+            </div>
+          }
+
+          @if (successMessage) {
+            <div class="alert alert-success" role="alert">
+              {{ successMessage }}
+            </div>
+          }
+
+          <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+            <div class="row">
+              <div class="col-12 col-md-6 mb-3">
+                <label for="nombre" class="form-label">Nombre *</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="nombre"
+                  formControlName="nombre"
+                  [class.is-invalid]="nombre?.invalid && nombre?.touched"
+                />
+                @if (nombre?.invalid && nombre?.touched) {
+                  <div class="invalid-feedback">
+                    @if (nombre?.errors?.['required']) {
+                      El nombre es obligatorio
+                    }
+                    @if (nombre?.errors?.['minlength']) {
+                      Mínimo 2 caracteres
+                    }
+                  </div>
+                }
+              </div>
+
+              <div class="col-12 col-md-6 mb-3">
+                <label for="apellido" class="form-label">Apellido *</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="apellido"
+                  formControlName="apellido"
+                  [class.is-invalid]="apellido?.invalid && apellido?.touched"
+                />
+                @if (apellido?.invalid && apellido?.touched) {
+                  <div class="invalid-feedback">
+                    @if (apellido?.errors?.['required']) {
+                      El apellido es obligatorio
+                    }
+                    @if (apellido?.errors?.['minlength']) {
+                      Mínimo 2 caracteres
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-12 col-md-6 mb-3">
+                <label for="rut" class="form-label">RUT *</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="rut"
+                  formControlName="rut"
+                  placeholder="12345678-9"
+                  [class.is-invalid]="rut?.invalid && rut?.touched"
+                />
+                @if (rut?.invalid && rut?.touched) {
+                  <div class="invalid-feedback">
+                    @if (rut?.errors?.['required']) {
+                      El RUT es obligatorio
+                    }
+                    @if (rut?.errors?.['pattern']) {
+                      Formato inválido (ej: 12345678-9)
+                    }
+                  </div>
+                }
+              </div>
+
+              <div class="col-12 col-md-6 mb-3">
+                <label for="email" class="form-label">Email *</label>
+                <input
+                  type="email"
+                  class="form-control"
+                  id="email"
+                  formControlName="email"
+                  [class.is-invalid]="email?.invalid && email?.touched"
+                />
+                @if (email?.invalid && email?.touched) {
+                  <div class="invalid-feedback">
+                    @if (email?.errors?.['required']) {
+                      El email es obligatorio
+                    }
+                    @if (email?.errors?.['email']) {
+                      Email inválido
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="password" class="form-label">Contraseña *</label>
+              <input
+                type="password"
+                class="form-control"
+                id="password"
+                formControlName="password"
+                [class.is-invalid]="password?.invalid && password?.touched"
+              />
+
+              <div class="mt-2">
+                <small class="d-block" [class.text-success]="!password?.errors?.['minLength']" [class.text-danger]="password?.errors?.['minLength']">
+                  ✓ Mínimo 8 caracteres
+                </small>
+                <small class="d-block" [class.text-success]="!password?.errors?.['maxLength']" [class.text-danger]="password?.errors?.['maxLength']">
+                  ✓ Máximo 20 caracteres
+                </small>
+                <small class="d-block" [class.text-success]="!password?.errors?.['hasSpecialChar']" [class.text-danger]="password?.errors?.['hasSpecialChar']">
+                  ✓ Al menos un carácter especial (!@#$%^&*)
+                </small>
+                <small class="d-block" [class.text-success]="!password?.errors?.['hasNumber']" [class.text-danger]="password?.errors?.['hasNumber']">
+                  ✓ Al menos un número
+                </small>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-12 col-md-6 mb-3">
+                <label for="telefono" class="form-label">Teléfono *</label>
+                <input
+                  type="tel"
+                  class="form-control"
+                  id="telefono"
+                  formControlName="telefono"
+                  placeholder="+56912345678"
+                  [class.is-invalid]="telefono?.invalid && telefono?.touched"
+                />
+                @if (telefono?.invalid && telefono?.touched) {
+                  <div class="invalid-feedback">
+                    @if (telefono?.errors?.['required']) {
+                      El teléfono es obligatorio
+                    }
+                    @if (telefono?.errors?.['pattern']) {
+                      Formato: +56912345678
+                    }
+                  </div>
+                }
+              </div>
+
+              <div class="col-12 col-md-6 mb-3">
+                <label for="fechaNacimiento" class="form-label">Fecha de Nacimiento *</label>
+                <input
+                  type="date"
+                  class="form-control"
+                  id="fechaNacimiento"
+                  formControlName="fechaNacimiento"
+                  [class.is-invalid]="fechaNacimiento?.invalid && fechaNacimiento?.touched"
+                />
+                @if (fechaNacimiento?.invalid && fechaNacimiento?.touched) {
+                  <div class="invalid-feedback">
+                    La fecha de nacimiento es obligatoria
+                  </div>
+                }
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="direccion" class="form-label">Dirección *</label>
+              <input
+                type="text"
+                class="form-control"
+                id="direccion"
+                formControlName="direccion"
+                [class.is-invalid]="direccion?.invalid && direccion?.touched"
+              />
+              @if (direccion?.invalid && direccion?.touched) {
+                <div class="invalid-feedback">
+                  La dirección es obligatoria
+                </div>
+              }
+            </div>
+
+            <button
+              type="submit"
+              class="btn btn-primary w-100 mb-3"
+              [disabled]="registerForm.invalid"
+            >
+              Registrarse
+            </button>
+
+            <div class="text-center">
+              <p class="mb-0">
+                ¿Ya tienes cuenta?
+                <a routerLink="/login" class="text-decoration-none">Inicia sesión aquí</a>
+              </p>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

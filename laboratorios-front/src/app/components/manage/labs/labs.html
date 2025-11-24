@@ -1,0 +1,152 @@
+<div class="container-fluid min-vh-100 bg-light">
+  <nav class="navbar navbar-expand-lg navbar-dark bg-success">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">Sistema de Laboratorios</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link" routerLink="/dashboard/admin">Dashboard</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" routerLink="/perfil">Mi Perfil</a>
+          </li>
+          <li class="nav-item">
+            <button class="btn btn-outline-light btn-sm ms-2" (click)="logout()">Cerrar Sesión</button>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container py-4">
+    <div class="row mb-4">
+      <div class="col-12">
+        <h1 class="display-5 mb-3">Gestión de Laboratorios</h1>
+        <p class="lead">Administrar laboratorios del sistema</p>
+      </div>
+    </div>
+
+    <div class="row mb-4">
+      <div class="col-12 col-md-8">
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-search"></i></span>
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Buscar laboratorios por nombre..."
+            (input)="onSearch($event)"
+          />
+        </div>
+      </div>
+      <div class="col-12 col-md-4 mt-2 mt-md-0">
+        <button class="btn btn-success w-100" (click)="openCreateModal()">
+          <i class="bi bi-plus-circle me-2"></i>Nuevo Laboratorio
+        </button>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-12">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Nombre del Laboratorio</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @if (filteredLabs.length > 0) {
+                    @for (lab of filteredLabs; track lab.id) {
+                      <tr>
+                        <td>{{ lab.id }}</td>
+                        <td>
+                          <i class="bi bi-building text-success me-2"></i>
+                          {{ lab.name }}
+                        </td>
+                        <td>
+                          <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary" (click)="openEditModal(lab)">
+                              <i class="bi bi-pencil"></i> Editar
+                            </button>
+                            <button class="btn btn-outline-danger" (click)="deleteLab(lab.id)">
+                              <i class="bi bi-trash"></i> Eliminar
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    }
+                  } @else {
+                    <tr>
+                      <td colspan="3" class="text-center text-muted">No se encontraron laboratorios</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row mt-4">
+      <div class="col-12">
+        <div class="alert alert-info">
+          <i class="bi bi-info-circle me-2"></i>
+          <strong>Total de laboratorios:</strong> {{ labs.length }}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+@if (showModal) {
+  <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-success text-white">
+          <h5 class="modal-title">{{ editingLab ? 'Editar Laboratorio' : 'Nuevo Laboratorio' }}</h5>
+          <button type="button" class="btn-close btn-close-white" (click)="closeModal()"></button>
+        </div>
+        <div class="modal-body">
+          <form [formGroup]="labForm" (ngSubmit)="onSubmit()">
+            <div class="mb-3">
+              <label for="name" class="form-label">Nombre del Laboratorio *</label>
+              <input
+                type="text"
+                class="form-control"
+                id="name"
+                formControlName="name"
+                placeholder="Ej: Laboratorio Central"
+                [class.is-invalid]="name?.invalid && name?.touched"
+              />
+              @if (name?.invalid && name?.touched) {
+                <div class="invalid-feedback">
+                  @if (name?.errors?.['required']) {
+                    El nombre del laboratorio es obligatorio
+                  }
+                  @if (name?.errors?.['minlength']) {
+                    El nombre debe tener al menos 3 caracteres
+                  }
+                </div>
+              }
+            </div>
+
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancelar</button>
+              <button type="submit" class="btn btn-success" [disabled]="labForm.invalid">
+                <i class="bi bi-save me-2"></i>{{ editingLab ? 'Actualizar' : 'Crear' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+}

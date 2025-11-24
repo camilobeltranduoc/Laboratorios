@@ -1,0 +1,94 @@
+<div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center bg-light">
+  <div class="row w-100 justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6 col-xl-4">
+      <div class="card shadow">
+        <div class="card-body p-4">
+          <h2 class="text-center mb-4">Sistema de Laboratorios</h2>
+          <h5 class="text-center text-muted mb-4">Iniciar Sesión</h5>
+
+          @if (errorMessage) {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+              {{ errorMessage }}
+              <button type="button" class="btn-close" (click)="errorMessage = ''"></button>
+            </div>
+          }
+
+          <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+            <div class="mb-3">
+              <label for="email" class="form-label">Email</label>
+              <input
+                type="email"
+                class="form-control"
+                id="email"
+                formControlName="email"
+                placeholder="correo@ejemplo.com"
+                [class.is-invalid]="email?.invalid && email?.touched"
+              />
+              @if (email?.invalid && email?.touched) {
+                <div class="invalid-feedback">
+                  @if (email?.errors?.['required']) {
+                    El email es obligatorio
+                  }
+                  @if (email?.errors?.['email']) {
+                    Ingrese un email válido
+                  }
+                </div>
+              }
+            </div>
+
+            <div class="mb-3">
+              <label for="password" class="form-label">Contraseña</label>
+              <input
+                type="password"
+                class="form-control"
+                id="password"
+                formControlName="password"
+                placeholder="Contraseña"
+                [class.is-invalid]="password?.invalid && password?.touched"
+              />
+              @if (password?.invalid && password?.touched) {
+                <div class="invalid-feedback">
+                  La contraseña es obligatoria
+                </div>
+              }
+            </div>
+
+            <button
+              type="submit"
+              class="btn btn-primary w-100 mb-3"
+              [disabled]="loginForm.invalid"
+            >
+              Iniciar Sesión
+            </button>
+
+            <div class="text-center">
+              <a routerLink="/recuperar-password" class="text-decoration-none d-block mb-2">
+                ¿Olvidaste tu contraseña?
+              </a>
+              <p class="mb-0">
+                ¿No tienes cuenta?
+                <a routerLink="/registro" class="text-decoration-none">Regístrate aquí</a>
+              </p>
+            </div>
+          </form>
+
+          <hr class="my-4" />
+
+          <div class="bg-light p-3 rounded">
+            <p class="text-center mb-2 fw-bold text-secondary small">Usuarios de Prueba</p>
+            <div class="small text-muted">
+              <div class="mb-2">
+                <strong class="text-primary">Administrador:</strong><br>
+                <code class="text-dark">admin@laboratorios.cl</code> / <code class="text-dark">Admin123!</code>
+              </div>
+              <div class="mb-0">
+                <strong class="text-success">Médico:</strong><br>
+                <code class="text-dark">medico@laboratorios.cl</code> / <code class="text-dark">Medico123!</code>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
