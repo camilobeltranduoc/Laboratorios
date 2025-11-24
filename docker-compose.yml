@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  # Frontend Angular
+  frontend:
+    build:
+      context: ./laboratorios-front
+      dockerfile: Dockerfile
+    container_name: laboratorios-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - user-service
+      - labs-service
+    networks:
+      - laboratorios-network
+
+  # User Service (Microservicio de Usuarios)
+  user-service:
+    build:
+      context: ./user-service
+      dockerfile: Dockerfile
+    container_name: laboratorios-user-service
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_PROFILES_ACTIVE=cloud
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - WALLET_LOCATION=/app/wallet
+    networks:
+      - laboratorios-network
+
+  # Labs Service (Microservicio de Laboratorios)
+  labs-service:
+    build:
+      context: ./labs-service
+      dockerfile: Dockerfile
+    container_name: laboratorios-labs-service
+    ports:
+      - "8083:8083"
+    environment:
+      - SPRING_PROFILES_ACTIVE=cloud
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - WALLET_LOCATION=/app/wallet
+    networks:
+      - laboratorios-network
+
+networks:
+  laboratorios-network:
+    driver: bridge

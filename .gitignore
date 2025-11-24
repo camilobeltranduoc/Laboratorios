@@ -31,9 +31,11 @@
 .DS_Store
 Thumbs.db
 
-# Configuracion con credenciales
-application-*.properties
-!application.properties
+# Environment variables (contienen credenciales reales)
+.env
+
+# Configuracion local (puede contener credenciales)
+**/application-local.properties
 
 # Scripts temporales
 reorganizar_proyecto.bat
