@@ -1,255 +1,295 @@
-# Sistema de Gestion de Laboratorios y Resultados
+# Sistema de Gestión de Laboratorios Clínicos
 
-Proyecto de evaluacion - Desarrollo de Aplicaciones Spring Boot
-DUOC UC - Desarrollo Fullstack 3
+Proyecto desarrollado para la asignatura Desarrollo Fullstack 3 (DSY2205)
+DUOC UC - 2025
 
-## Descripcion
+## Descripción
 
-Sistema de microservicios para la gestion de laboratorios y resultados de analisis clinicos, desarrollado con Spring Boot y Oracle Database.
+Aplicación web para gestionar laboratorios clínicos, usuarios y resultados de exámenes médicos. El sistema permite a los administradores gestionar laboratorios y usuarios, a los médicos consultar resultados de pacientes, y a los pacientes ver sus propios resultados.
 
-## Estructura del Proyecto
+## Arquitectura
 
-```
-.
-├── user-service/          # Microservicio de Usuarios
-├── results-service/       # Microservicio de Resultados
-└── schema_oracle.sql      # Script de base de datos
-```
+El proyecto está compuesto por:
 
-## Tecnologias
+- **Frontend**: Angular 20 (puerto 4200)
+- **Backend**: 3 microservicios Spring Boot
+  - user-service: Gestión de usuarios y autenticación (puerto 8081)
+  - labs-service: Gestión de laboratorios (puerto 8083)
+  - results-service: Gestión de resultados de exámenes (puerto 8082)
+- **Base de datos**: Oracle Cloud Autonomous Database
+- **Containerización**: Docker y docker-compose
 
+## Tecnologías utilizadas
+
+**Frontend:**
+- Angular 20
+- TypeScript
+- Bootstrap 5
+- RxJS
+
+**Backend:**
 - Java 21
 - Spring Boot 3.5.7
-- Maven
-- Oracle Database (ojdbc11)
 - Spring Data JPA
-- Spring Web
-- Spring Validation
+- Spring Security
+- Maven
 
-## Requisitos
+**Base de datos:**
+- Oracle Autonomous Database (Cloud)
+- Oracle JDBC Driver 23.4
 
-1. Java 21 instalado
-2. Maven 3.8+
-3. Oracle Cloud Account con Autonomous Database
-4. Git
+**DevOps:**
+- Docker
+- Docker Compose
+- SonarQube (análisis de código)
+- Karma + Jasmine (testing)
 
-## Configuracion de Base de Datos
+## Requisitos previos
 
-### 1. Crear Autonomous Database en Oracle Cloud
+Antes de ejecutar el proyecto necesitas tener instalado:
 
-- Acceder a Oracle Cloud Console
-- Crear una Autonomous Transaction Processing Database
-- Descargar el Wallet Connection
+1. Node.js 18+ y npm
+2. Java 21
+3. Maven 3.8+
+4. Docker Desktop
+5. Git
 
-### 2. Configurar el Wallet
+## Configuración de la base de datos
 
-Extraer el wallet y copiar los archivos a:
-- `user-service/src/main/resources/wallet/`
-- `results-service/src/main/resources/wallet/`
+### Paso 1: Wallet de Oracle Cloud
 
-### 3. Configurar application-cloud.properties
+El proyecto ya incluye el wallet configurado en cada microservicio dentro de `src/main/resources/wallet/`
 
-Editar en ambos servicios `src/main/resources/application-cloud.properties`:
+Si necesitas usar tu propia base de datos:
+1. Descarga el wallet desde Oracle Cloud Console
+2. Copia los archivos del wallet a:
+   - `user-service/src/main/resources/wallet/`
+   - `labs-service/src/main/resources/wallet/`
+   - `results-service/src/main/resources/wallet/`
 
-```properties
-spring.datasource.url=jdbc:oracle:thin:@(copiar_connection_string_de_tnsnames.ora)
-spring.datasource.username=ADMIN
-spring.datasource.password=TU_PASSWORD_ADMIN
-```
+### Paso 2: Script de base de datos
 
-### 4. Ejecutar el script de schema
+Ejecuta el archivo `schema_oracle.sql` en tu base de datos Oracle para crear las tablas y datos iniciales.
 
-- Acceder a SQL Developer Web como ADMIN
-- Ejecutar todo el contenido de `schema_oracle.sql`
+## Instalación y ejecución
 
-## Compilación y Ejecución
+### Opción 1: Ejecutar con Docker (Recomendado)
 
-### User Service (Puerto 8081)
-
-```bash
-cd user-service
-mvn spring-boot:run "-Dspring-boot.run.profiles=cloud"
-```
-
-### Results Service (Puerto 8082)
+La forma más fácil es usar Docker Compose:
 
 ```bash
-cd results-service
-mvn spring-boot:run "-Dspring-boot.run.profiles=cloud"
+# Levantar todos los servicios
+docker-compose up -d
+
+# Ver logs
+docker-compose logs -f
+
+# Detener servicios
+docker-compose down
 ```
 
-Nota: El perfil `cloud` activa la configuracion de `application-cloud.properties`
+Esto levanta:
+- Frontend en http://localhost:4200
+- user-service en http://localhost:8081
+- labs-service en http://localhost:8083
+- results-service en http://localhost:8082
 
-### Ejecutar JARs compilados
+### Opción 2: Ejecutar manualmente
+
+**Backend:**
 
 ```bash
 # User Service
-java -jar user-service/target/user-service-0.0.1-SNAPSHOT.jar
+cd user-service
+mvn spring-boot:run
+
+# Labs Service
+cd labs-service
+mvn spring-boot:run
 
 # Results Service
-java -jar results-service/target/results-service-0.0.1-SNAPSHOT.jar
+cd results-service
+mvn spring-boot:run
+```
+
+**Frontend:**
+
+```bash
+cd laboratorios-front
+npm install
+ng serve
+```
+
+Acceder a http://localhost:4200
+
+## Usuarios de prueba
+
+El sistema viene con usuarios precargados para testing:
+
+| Email | Contraseña | Rol |
+|-------|------------|-----|
+| admin@laboratorios.cl | Admin123! | Administrador |
+| medico@laboratorios.cl | Medico123! | Médico |
+| paciente@laboratorios.cl | Paciente123! | Paciente |
+| laboratorista@laboratorios.cl | Laboratorista123! | Laboratorista |
+
+## Funcionalidades por rol
+
+**Administrador:**
+- Gestión completa de usuarios (crear, editar, eliminar)
+- Gestión de laboratorios
+- Gestión de resultados
+- Ver estadísticas del sistema
+
+**Médico:**
+- Consultar resultados de pacientes
+- Ver información de laboratorios
+
+**Paciente:**
+- Ver sus propios resultados de exámenes
+- Descargar resultados
+
+**Laboratorista:**
+- Cargar y actualizar resultados de exámenes
+- Gestionar información de laboratorios
+
+## Pruebas unitarias
+
+El proyecto incluye pruebas unitarias con Karma y Jasmine.
+
+```bash
+cd laboratorios-front
+
+# Ejecutar tests
+ng test
+
+# Ejecutar tests con coverage
+ng test --code-coverage --no-watch
+
+# Ver reporte de cobertura
+# Abrir: laboratorios-front/coverage/laboratorios-front/index.html
+```
+
+Cobertura actual: **100%** (127 statements, 20 branches, 46 functions, 109 lines)
+
+Total de tests: **101**
+
+## Análisis de código con SonarQube
+
+Para analizar la calidad del código:
+
+```bash
+# Levantar SonarQube
+docker-compose -f docker-compose.sonarqube.yml up -d
+
+# Esperar a que inicie (aprox 1 minuto)
+# Acceder a http://localhost:9000
+# Login: admin / admin (te pedirá cambiar la contraseña)
+
+# Ejecutar análisis
+cd laboratorios-front
+../sonar-scanner/bin/sonar-scanner.bat -Dsonar.projectKey=laboratorios-front -Dsonar.sources=src/app -Dsonar.host.url=http://localhost:9000 -Dsonar.token=TU_TOKEN
 ```
 
 ## Endpoints API
 
 ### User Service (http://localhost:8081)
 
-| Metodo | Endpoint | Descripcion |
-|--------|----------|-------------|
-| POST | `/api/users/auth/login` | Inicio de sesion |
-| POST | `/api/users` | Crear usuario |
-| GET | `/api/users/{id}` | Obtener usuario por ID |
-| PUT | `/api/users/{id}` | Actualizar usuario |
-| DELETE | `/api/users/{id}` | Eliminar usuario |
-
-#### Ejemplo POST /api/users/auth/login
-
-```json
-{
-  "email": "admin@laboratorio.cl",
-  "password": "admin123"
-}
+```
+POST   /api/users/auth/login      - Login
+POST   /api/users/auth/register   - Registro
+GET    /api/users                 - Listar usuarios
+GET    /api/users/{id}            - Obtener usuario
+PUT    /api/users/{id}            - Actualizar usuario
+DELETE /api/users/{id}            - Eliminar usuario
 ```
 
-Respuesta exitosa:
-```json
-{
-  "id": 1,
-  "email": "admin@laboratorio.cl",
-  "fullName": "Juan Pérez Administrador",
-  "roles": [
-    {
-      "id": 1,
-      "name": "ADMINISTRADOR"
-    }
-  ],
-  "message": "Inicio de sesión exitoso"
-}
+### Labs Service (http://localhost:8083)
+
 ```
-
-#### Ejemplo POST /api/users
-
-```json
-{
-  "email": "nuevo@laboratorio.cl",
-  "password": "password123",
-  "fullName": "Nuevo Usuario Test",
-  "roleIds": [1, 3]
-}
+GET    /api/labs                  - Listar laboratorios
+GET    /api/labs/{id}             - Obtener laboratorio
+POST   /api/labs                  - Crear laboratorio
+PUT    /api/labs/{id}             - Actualizar laboratorio
+DELETE /api/labs/{id}             - Eliminar laboratorio
 ```
 
 ### Results Service (http://localhost:8082)
 
-| Metodo | Endpoint | Descripcion |
-|--------|----------|-------------|
-| GET | `/api/results/labs` | Listar todos los laboratorios |
-| POST | `/api/results` | Crear resultado |
-| GET | `/api/results/{id}` | Obtener resultado por ID |
-| GET | `/api/results/by-user/{userId}` | Listar resultados por usuario |
-| PUT | `/api/results/{id}` | Actualizar resultado |
-| DELETE | `/api/results/{id}` | Eliminar resultado |
-
-#### Ejemplo POST /api/results
-
-```json
-{
-  "userId": 3,
-  "labId": 1,
-  "testType": "Hemograma",
-  "valueJson": "{\"hemoglobina\": 14.5, \"leucocitos\": 7500}",
-  "status": "COMPLETADO",
-  "resultDate": "2025-01-30"
-}
+```
+GET    /api/results                    - Listar resultados
+GET    /api/results/{id}               - Obtener resultado
+GET    /api/results/patient/{id}       - Resultados por paciente
+POST   /api/results                    - Crear resultado
+PUT    /api/results/{id}               - Actualizar resultado
+DELETE /api/results/{id}               - Eliminar resultado
 ```
 
-## Pruebas con Postman
+## Colección Postman
 
-1. Importar la colección de endpoints
-2. Configurar variables de entorno:
-   - `user-service-url`: http://localhost:8081
-   - `results-service-url`: http://localhost:8082
+El archivo `Postman_Collection.json` contiene todos los endpoints configurados para pruebas.
 
-### Secuencia de Pruebas
+Importar en Postman y configurar las variables:
+- `base_url_users`: http://localhost:8081
+- `base_url_labs`: http://localhost:8083
+- `base_url_results`: http://localhost:8082
 
-1. Login: POST `/api/users/auth/login` (probar con admin@laboratorio.cl / admin123)
-2. Verificar usuarios: GET `/api/users/1`
-3. Crear nuevo usuario: POST `/api/users`
-4. Listar laboratorios: GET `/api/results/labs`
-5. Crear resultado: POST `/api/results`
-6. Consultar resultados por usuario: GET `/api/results/by-user/3`
-7. Actualizar resultado: PUT `/api/results/1`
-8. Eliminar resultado: DELETE `/api/results/5`
+## Estructura del proyecto
 
-## Datos de Prueba Precargados
-
-### Usuarios (con contraseñas para login)
-
-| Email | Password | ID | Roles |
-|-------|----------|----|----|
-| admin@laboratorio.cl | admin123 | 1 | ADMINISTRADOR |
-| doctor@laboratorio.cl | doctor123 | 2 | MEDICO, ADMINISTRADOR |
-| paciente@laboratorio.cl | paciente123 | 3 | PACIENTE |
-| lab@laboratorio.cl | lab123 | 4 | LABORATORISTA |
-
-Nota: Las contraseñas estan encriptadas con BCrypt en la base de datos.
-
-### Laboratorios
-
-- ID 1: Laboratorio Central Santiago
-- ID 2: Laboratorio Clínico Viña del Mar
-- ID 3: Laboratorio de Análisis Concepción
-- ID 4: Laboratorio Especializado La Serena
-
-### Roles
-
-- ID 1: ADMINISTRADOR
-- ID 2: MEDICO
-- ID 3: PACIENTE
-- ID 4: LABORATORISTA
-
-## Verificacion
-
-### 1. Verificar que los servicios están corriendo
-
-```bash
-# User Service
-curl http://localhost:8081/api/users/1
-
-# Results Service
-curl http://localhost:8082/api/results/labs
+```
+.
+├── laboratorios-front/          # Frontend Angular
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── components/      # Componentes de la aplicación
+│   │   │   ├── services/        # Servicios (auth, user, lab, result)
+│   │   │   ├── guards/          # Guards de autenticación y roles
+│   │   │   └── models/          # Modelos de datos
+│   │   └── ...
+│   ├── karma.conf.js            # Configuración de tests
+│   └── sonar-project.properties # Configuración SonarQube
+│
+├── user-service/                # Microservicio de usuarios
+│   ├── src/main/
+│   │   ├── java/.../
+│   │   │   ├── controller/
+│   │   │   ├── service/
+│   │   │   ├── repository/
+│   │   │   └── dto/
+│   │   └── resources/
+│   │       ├── wallet/          # Wallet Oracle
+│   │       └── application.properties
+│   └── Dockerfile
+│
+├── labs-service/                # Microservicio de laboratorios
+│   └── (estructura similar a user-service)
+│
+├── results-service/             # Microservicio de resultados
+│   └── (estructura similar a user-service)
+│
+├── docker-compose.yml           # Orquestación de servicios
+├── docker-compose.sonarqube.yml # SonarQube en Docker
+├── schema_oracle.sql            # Script de base de datos
+├── Postman_Collection.json      # Colección de Postman
+└── README.md                    # Este archivo
 ```
 
-### 2. Verificar datos en Oracle
+## Problemas comunes
 
-```sql
-SELECT * FROM USERS;
-SELECT * FROM ROLES;
-SELECT * FROM LABS;
-SELECT * FROM RESULTS;
-```
+**Puerto ocupado:**
+Si algún puerto está en uso, modificar en docker-compose.yml o en application.properties
 
-## Troubleshooting
+**Error de conexión a BD:**
+Verificar que el wallet esté en la carpeta correcta y que las credenciales sean válidas
 
-### Error de conexion a BD
+**Tests fallan:**
+Limpiar caché de npm: `npm cache clean --force` y reinstalar: `npm install`
 
-- Verificar que Oracle este corriendo
-- Verificar credenciales: backend/backend123
-- Verificar el SID/Service: XEPDB1
-
-### Puerto en uso
-
-Cambiar puerto en `application.properties`:
-```properties
-server.port=8083
-```
-
-### Error de compilacion
-
-```bash
-mvn clean install -U
-```
+**Docker no inicia:**
+Verificar que Docker Desktop esté corriendo
 
 ## Autor
 
-Proyecto desarrollado para DUOC UC
-Desarrollo de Aplicaciones Fullstack 3
+Camilo Beltrán
+DUOC UC - 2025
+Desarrollo Fullstack 3 (DSY2205)

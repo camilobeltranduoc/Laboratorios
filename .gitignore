@@ -39,3 +39,16 @@ Thumbs.db
 
 # Scripts temporales
 reorganizar_proyecto.bat
+
+# Node modules (Angular)
+**/node_modules/
+**/dist/
+**/.angular/
+
+# Angular coverage
+**/coverage/
+
+# SonarQube
+**/.scannerwork/
+sonar-scanner/
+
