@@ -1,13 +1,29 @@
 import { TestBed } from '@angular/core/testing';
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { LabService } from './lab.service';
 import { Lab } from '../models/lab.model';
+import { API_CONFIG } from '../config/api.config';
 
 describe('LabService', () => {
   let service: LabService;
+  let httpMock: HttpTestingController;
+
+  const mockLabs: Lab[] = [
+    { id: 1, name: 'Laboratorio Central Santiago' },
+    { id: 2, name: 'Laboratorio Clínico Providencia' }
+  ];
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
+    TestBed.configureTestingModule({
+      imports: [HttpClientTestingModule],
+      providers: [LabService]
+    });
     service = TestBed.inject(LabService);
+    httpMock = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    httpMock.verify();
   });
 
   it('should be created', () => {
@@ -15,117 +31,148 @@ describe('LabService', () => {
   });
 
   describe('getAll', () => {
-    it('should return all labs', () => {
-      const labs = service.getAll();
-      expect(labs.length).toBe(4);
+    it('should return all labs', (done) => {
+      service.getAll().subscribe(labs => {
+        expect(labs.length).toBe(2);
+        expect(labs).toEqual(mockLabs);
+        done();
+      });
+
+      const req = httpMock.expectOne(API_CONFIG.labsService);
+      expect(req.request.method).toBe('GET');
+      req.flush(mockLabs);
     });
 
-    it('should return a copy of the labs array', () => {
-      const labs1 = service.getAll();
-      const labs2 = service.getAll();
-      expect(labs1).not.toBe(labs2);
-      expect(labs1).toEqual(labs2);
+    it('should return empty array on error', (done) => {
+      service.getAll().subscribe(labs => {
+        expect(labs).toEqual([]);
+        done();
+      });
+
+      const req = httpMock.expectOne(API_CONFIG.labsService);
+      req.flush({ message: 'Error' }, { status: 500, statusText: 'Internal Server Error' });
     });
   });
 
   describe('getById', () => {
-    it('should return lab when found', () => {
-      const lab = service.getById(1);
-      expect(lab).toBeTruthy();
-      expect(lab?.name).toBe('Laboratorio Central Santiago');
+    it('should return lab when found', (done) => {
+      service.getById(1).subscribe(lab => {
+        expect(lab).toEqual(mockLabs[0]);
+        done();
+      });
+
+      const req = httpMock.expectOne(`${API_CONFIG.labsService}/1`);
+      expect(req.request.method).toBe('GET');
+      req.flush(mockLabs[0]);
     });
 
-    it('should return undefined when lab not found', () => {
-      const lab = service.getById(999);
-      expect(lab).toBeUndefined();
+    it('should return undefined when lab not found', (done) => {
+      service.getById(999).subscribe(lab => {
+        expect(lab).toBeUndefined();
+        done();
+      });
+
+      const req = httpMock.expectOne(`${API_CONFIG.labsService}/999`);
+      req.flush({ message: 'Lab not found' }, { status: 404, statusText: 'Not Found' });
     });
   });
 
   describe('create', () => {
-    it('should create a new lab successfully', () => {
-      const newLab: Omit<Lab, 'id'> = {
+    it('should create a new lab successfully', (done) => {
+      const newLabData: Omit<Lab, 'id'> = {
         name: 'Nuevo Laboratorio Test'
       };
 
-      const initialCount = service.getAll().length;
-      const createdLab = service.create(newLab);
+      const createdLab = { ...newLabData, id: 3 };
 
-      expect(createdLab).toBeTruthy();
-      expect(createdLab.id).toBeDefined();
-      expect(createdLab.name).toBe('Nuevo Laboratorio Test');
-      expect(service.getAll().length).toBe(initialCount + 1);
+      service.create(newLabData).subscribe(lab => {
+        expect(lab).toEqual(createdLab);
+        done();
+      });
+
+      const req = httpMock.expectOne(API_CONFIG.labsService);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual(newLabData);
+      req.flush(createdLab);
     });
 
-    it('should assign incremental ID to new lab', () => {
-      const labs = service.getAll();
-      const maxId = Math.max(...labs.map(l => l.id));
-
-      const newLab: Omit<Lab, 'id'> = {
-        name: 'Test Lab'
+    it('should throw error on creation failure', (done) => {
+      const newLabData: Omit<Lab, 'id'> = {
+        name: 'Duplicate Lab'
       };
 
-      const createdLab = service.create(newLab);
-      expect(createdLab.id).toBe(maxId + 1);
+      service.create(newLabData).subscribe({
+        next: () => fail('should have failed'),
+        error: (error) => {
+          expect(error).toBeTruthy();
+          done();
+        }
+      });
+
+      const req = httpMock.expectOne(API_CONFIG.labsService);
+      req.flush({ message: 'Lab name already exists' }, { status: 400, statusText: 'Bad Request' });
     });
   });
 
   describe('update', () => {
-    it('should update existing lab successfully', () => {
+    it('should update existing lab successfully', (done) => {
       const updatedLab: Lab = {
         id: 1,
-        name: 'Laboratorio Actualizado'
+        name: 'Laboratorio Central Actualizado'
       };
 
-      const result = service.update(1, updatedLab);
-      expect(result).toBe(true);
+      service.update(1, updatedLab).subscribe(lab => {
+        expect(lab.name).toBe('Laboratorio Central Actualizado');
+        done();
+      });
 
-      const lab = service.getById(1);
-      expect(lab?.name).toBe('Laboratorio Actualizado');
+      const req = httpMock.expectOne(`${API_CONFIG.labsService}/1`);
+      expect(req.request.method).toBe('PUT');
+      req.flush(updatedLab);
     });
 
-    it('should return false when updating non-existent lab', () => {
+    it('should throw error when updating non-existent lab', (done) => {
       const updatedLab: Lab = {
         id: 999,
-        name: 'Non Existent'
+        name: 'Non-existent Lab'
       };
 
-      const result = service.update(999, updatedLab);
-      expect(result).toBe(false);
-    });
+      service.update(999, updatedLab).subscribe({
+        next: () => fail('should have failed'),
+        error: (error) => {
+          expect(error).toBeTruthy();
+          done();
+        }
+      });
 
-    it('should preserve the ID when updating', () => {
-      const updatedLab: Lab = {
-        id: 999,
-        name: 'Test Lab'
-      };
-
-      service.update(2, updatedLab);
-      const lab = service.getById(2);
-
-      expect(lab?.id).toBe(2);
-      expect(lab?.name).toBe('Test Lab');
+      const req = httpMock.expectOne(`${API_CONFIG.labsService}/999`);
+      req.flush({ message: 'Lab not found' }, { status: 404, statusText: 'Not Found' });
     });
   });
 
   describe('delete', () => {
-    it('should delete existing lab successfully', () => {
-      const initialCount = service.getAll().length;
-      const result = service.delete(1);
+    it('should delete existing lab successfully', (done) => {
+      service.delete(1).subscribe(() => {
+        expect().nothing();
+        done();
+      });
 
-      expect(result).toBe(true);
-      expect(service.getAll().length).toBe(initialCount - 1);
-      expect(service.getById(1)).toBeUndefined();
+      const req = httpMock.expectOne(`${API_CONFIG.labsService}/1`);
+      expect(req.request.method).toBe('DELETE');
+      req.flush(null);
     });
 
-    it('should return false when deleting non-existent lab', () => {
-      const result = service.delete(999);
-      expect(result).toBe(false);
-    });
+    it('should throw error when deleting non-existent lab', (done) => {
+      service.delete(999).subscribe({
+        next: () => fail('should have failed'),
+        error: (error) => {
+          expect(error).toBeTruthy();
+          done();
+        }
+      });
 
-    it('should not affect lab count when deleting non-existent lab', () => {
-      const initialCount = service.getAll().length;
-      service.delete(999);
-      expect(service.getAll().length).toBe(initialCount);
+      const req = httpMock.expectOne(`${API_CONFIG.labsService}/999`);
+      req.flush({ message: 'Lab not found' }, { status: 404, statusText: 'Not Found' });
     });
   });
 });

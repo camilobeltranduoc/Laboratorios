@@ -37,16 +37,24 @@ export class ForgotPassword {
     if (this.forgotForm.valid) {
       const { email, newPassword } = this.forgotForm.value;
 
-      if (this.authService.resetPassword(email, newPassword)) {
-        this.successMessage = 'Contraseña actualizada. Redirigiendo al login...';
-        this.errorMessage = '';
-        setTimeout(() => {
-          this.router.navigate(['/login']);
-        }, 2000);
-      } else {
-        this.errorMessage = 'Email no encontrado';
-        this.successMessage = '';
-      }
+      this.authService.resetPassword(email, newPassword).subscribe({
+        next: (success) => {
+          if (success) {
+            this.successMessage = 'Contraseña actualizada. Redirigiendo al login...';
+            this.errorMessage = '';
+            setTimeout(() => {
+              this.router.navigate(['/login']);
+            }, 2000);
+          } else {
+            this.errorMessage = 'Email no encontrado';
+            this.successMessage = '';
+          }
+        },
+        error: () => {
+          this.errorMessage = 'Error al intentar restablecer contraseña';
+          this.successMessage = '';
+        }
+      });
     }
   }
 

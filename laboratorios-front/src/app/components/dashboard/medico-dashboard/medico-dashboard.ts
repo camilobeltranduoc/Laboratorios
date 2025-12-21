@@ -33,10 +33,18 @@ export class MedicoDashboard implements OnInit {
   }
 
   loadData(): void {
-    this.labs = this.labService.getAll();
-    const allResults = this.resultService.getAll();
-    this.totalResults = allResults.length;
-    this.recentResults = allResults.slice(0, 5);
+    this.labService.getAll().subscribe({
+      next: (labs) => this.labs = labs,
+      error: (err) => console.error('Error al cargar laboratorios:', err)
+    });
+
+    this.resultService.getAll().subscribe({
+      next: (results) => {
+        this.totalResults = results.length;
+        this.recentResults = results.slice(0, 5);
+      },
+      error: (err) => console.error('Error al cargar resultados:', err)
+    });
   }
 
   logout(): void {

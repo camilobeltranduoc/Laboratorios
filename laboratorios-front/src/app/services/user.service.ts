@@ -1,93 +1,64 @@
 import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { User } from '../models/user.model';
+import { API_CONFIG } from '../config/api.config';
 
 @Injectable({
   providedIn: 'root'
 })
 export class UserService {
-  private users: User[] = [
-    {
-      id: 1,
-      nombre: 'Admin',
-      apellido: 'Sistema',
-      rut: '11111111-1',
-      email: 'admin@laboratorios.cl',
-      password: 'Admin123!',
-      telefono: '+56912345678',
-      direccion: 'Santiago Centro',
-      fechaNacimiento: '1990-01-01',
-      rol: 'ADMINISTRADOR'
-    },
-    {
-      id: 2,
-      nombre: 'Dr. Juan',
-      apellido: 'Pérez',
-      rut: '22222222-2',
-      email: 'medico@laboratorios.cl',
-      password: 'Medico123!',
-      telefono: '+56987654321',
-      direccion: 'Providencia',
-      fechaNacimiento: '1985-05-15',
-      rol: 'MEDICO'
-    },
-    {
-      id: 3,
-      nombre: 'María',
-      apellido: 'González',
-      rut: '33333333-3',
-      email: 'paciente@laboratorios.cl',
-      password: 'Paciente123!',
-      telefono: '+56911111111',
-      direccion: 'Las Condes',
-      fechaNacimiento: '1995-03-20',
-      rol: 'PACIENTE'
-    },
-    {
-      id: 4,
-      nombre: 'Carlos',
-      apellido: 'Rojas',
-      rut: '44444444-4',
-      email: 'lab@laboratorios.cl',
-      password: 'Lab123!',
-      telefono: '+56922222222',
-      direccion: 'Ñuñoa',
-      fechaNacimiento: '1988-11-10',
-      rol: 'LABORATORISTA'
-    }
-  ];
 
-  getAll(): User[] {
-    return [...this.users];
+  constructor(private http: HttpClient) {}
+
+  getAll(): Observable<User[]> {
+    return this.http.get<User[]>(API_CONFIG.userService)
+      .pipe(
+        catchError(error => {
+          console.error('Error al obtener usuarios:', error);
+          return of([]);
+        })
+      );
   }
 
-  getById(id: number): User | undefined {
-    return this.users.find(u => u.id === id);
+  getById(id: number): Observable<User | undefined> {
+    return this.http.get<User>(`${API_CONFIG.userService}/${id}`)
+      .pipe(
+        catchError(error => {
+          console.error('Error al obtener usuario:', error);
+          return of(undefined);
+        })
+      );
   }
 
-  create(user: Omit<User, 'id'>): User {
-    const newUser: User = {
-      ...user,
-      id: Math.max(...this.users.map(u => u.id)) + 1
-    };
-    this.users.push(newUser);
-    return newUser;
+  create(userData: Omit<User, 'id'>): Observable<User> {
+    return this.http.post<User>(API_CONFIG.userService, userData)
+      .pipe(
+        catchError(error => {
+          console.error('Error al crear usuario:', error);
+          throw error;
+        })
+      );
   }
 
-  update(id: number, user: User): boolean {
-    const index = this.users.findIndex(u => u.id === id);
-    if (index !== -1) {
-      this.users[index] = { ...user, id };
-      return true;
-    }
-    return false;
+  update(id: number, user: User): Observable<User> {
+    return this.http.put<User>(`${API_CONFIG.userService}/${id}`, user)
+      .pipe(
+        catchError(error => {
+          console.error('Error al actualizar usuario:', error);
+          throw error;
+        })
+      );
   }
 
-  delete(id: number): boolean {
-    const index = this.users.findIndex(u => u.id === id);
-    if (index !== -1) {
-      this.users.splice(index, 1);
-      return true;
-    }
-    return false;
+  delete(id: number): Observable<void> {
+    return this.http.delete<void>(`${API_CONFIG.userService}/${id}`)
+      .pipe(
+        catchError(error => {
+          console.error('Error al eliminar usuario:', error);
+          throw error;
+        })
+      );
   }
 }

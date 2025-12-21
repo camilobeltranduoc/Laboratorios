@@ -13,7 +13,7 @@ RUN mvn dependency:go-offline
 COPY src ./src
 
 # Build the application
-RUN mvn clean package -DskipTests
+RUN mvn clean package -Dmaven.test.skip=true
 
 # Production stage
 FROM eclipse-temurin:21-jre-alpine

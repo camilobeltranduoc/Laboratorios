@@ -14,7 +14,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/labs")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class LabController {
 
     private final LabService labService;

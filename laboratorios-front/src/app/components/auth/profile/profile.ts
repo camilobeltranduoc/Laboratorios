@@ -48,10 +48,17 @@ export class Profile implements OnInit {
         ...this.profileForm.value
       };
 
-      if (this.authService.updateProfile(updatedUser)) {
-        this.successMessage = 'Perfil actualizado correctamente';
-        setTimeout(() => this.successMessage = '', 3000);
-      }
+      this.authService.updateProfile(updatedUser).subscribe({
+        next: (success) => {
+          if (success) {
+            this.successMessage = 'Perfil actualizado correctamente';
+            setTimeout(() => this.successMessage = '', 3000);
+          }
+        },
+        error: () => {
+          console.error('Error al actualizar perfil');
+        }
+      });
     }
   }
 }

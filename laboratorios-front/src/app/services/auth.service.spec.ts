@@ -1,17 +1,38 @@
 import { TestBed } from '@angular/core/testing';
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { AuthService } from './auth.service';
 import { User } from '../models/user.model';
+import { API_CONFIG } from '../config/api.config';
 
 describe('AuthService', () => {
   let service: AuthService;
+  let httpMock: HttpTestingController;
+
+  const mockUser: User = {
+    id: 1,
+    nombre: 'Admin',
+    apellido: 'Sistema',
+    email: 'admin@laboratorios.cl',
+    password: 'Admin123!',
+    rut: '11111111-1',
+    rol: 'ADMINISTRADOR',
+    telefono: '+56911111111',
+    direccion: 'Calle Principal 123',
+    fechaNacimiento: '1990-01-01'
+  };
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
+    TestBed.configureTestingModule({
+      imports: [HttpClientTestingModule],
+      providers: [AuthService]
+    });
     service = TestBed.inject(AuthService);
+    httpMock = TestBed.inject(HttpTestingController);
     localStorage.clear();
   });
 
   afterEach(() => {
+    httpMock.verify();
     localStorage.clear();
   });
 
@@ -20,48 +41,50 @@ describe('AuthService', () => {
   });
 
   describe('login', () => {
-    it('should login successfully with valid credentials', () => {
-      const result = service.login('admin@laboratorios.cl', 'Admin123!');
-      expect(result).toBe(true);
-      expect(service.getCurrentUser()).toBeTruthy();
-      expect(service.getCurrentUser()?.email).toBe('admin@laboratorios.cl');
+    it('should login successfully and store user', (done) => {
+      service.login('admin@laboratorios.cl', 'Admin123!').subscribe(result => {
+        expect(result).toBe(true);
+        expect(service.getCurrentUser()).toEqual(mockUser);
+        expect(localStorage.getItem('currentUser')).toBeTruthy();
+        done();
+      });
+
+      const req = httpMock.expectOne(`${API_CONFIG.userService}/auth/login`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual({ email: 'admin@laboratorios.cl', password: 'Admin123!' });
+      req.flush(mockUser);
     });
 
-    it('should fail login with invalid email', () => {
-      const result = service.login('invalid@laboratorios.cl', 'Admin123!');
-      expect(result).toBe(false);
-      expect(service.getCurrentUser()).toBeNull();
+    it('should return false on login failure', (done) => {
+      service.login('wrong@example.com', 'wrong').subscribe(result => {
+        expect(result).toBe(false);
+        expect(service.getCurrentUser()).toBeNull();
+        done();
+      });
+
+      const req = httpMock.expectOne(`${API_CONFIG.userService}/auth/login`);
+      req.flush({ message: 'Credenciales inválidas' }, { status: 401, statusText: 'Unauthorized' });
     });
 
-    it('should fail login with invalid password', () => {
-      const result = service.login('admin@laboratorios.cl', 'wrongpassword');
-      expect(result).toBe(false);
-      expect(service.getCurrentUser()).toBeNull();
-    });
+    it('should return false when response has no id', (done) => {
+      service.login('admin@laboratorios.cl', 'Admin123!').subscribe(result => {
+        expect(result).toBe(false);
+        done();
+      });
 
-    it('should store user in localStorage on successful login', () => {
-      service.login('admin@laboratorios.cl', 'Admin123!');
-      const stored = localStorage.getItem('currentUser');
-      expect(stored).toBeTruthy();
-      const user = JSON.parse(stored!);
-      expect(user.email).toBe('admin@laboratorios.cl');
+      const req = httpMock.expectOne(`${API_CONFIG.userService}/auth/login`);
+      req.flush({ email: 'admin@laboratorios.cl' });
     });
   });
 
   describe('logout', () => {
-    it('should clear current user', () => {
-      service.login('admin@laboratorios.cl', 'Admin123!');
-      expect(service.getCurrentUser()).toBeTruthy();
+    it('should clear current user and localStorage', () => {
+      localStorage.setItem('currentUser', JSON.stringify(mockUser));
+      service['currentUserSubject'].next(mockUser);
 
       service.logout();
+
       expect(service.getCurrentUser()).toBeNull();
-    });
-
-    it('should remove user from localStorage', () => {
-      service.login('admin@laboratorios.cl', 'Admin123!');
-      expect(localStorage.getItem('currentUser')).toBeTruthy();
-
-      service.logout();
       expect(localStorage.getItem('currentUser')).toBeNull();
     });
   });
@@ -72,11 +95,9 @@ describe('AuthService', () => {
     });
 
     it('should return current user when logged in', () => {
-      service.login('medico@laboratorios.cl', 'Medico123!');
+      service['currentUserSubject'].next(mockUser);
       const user = service.getCurrentUser();
-      expect(user).toBeTruthy();
-      expect(user?.nombre).toBe('Dr. Juan');
-      expect(user?.rol).toBe('MEDICO');
+      expect(user).toEqual(mockUser);
     });
   });
 
@@ -86,12 +107,12 @@ describe('AuthService', () => {
     });
 
     it('should return true when logged in', () => {
-      service.login('admin@laboratorios.cl', 'Admin123!');
+      service['currentUserSubject'].next(mockUser);
       expect(service.isAuthenticated()).toBe(true);
     });
 
     it('should return false after logout', () => {
-      service.login('admin@laboratorios.cl', 'Admin123!');
+      service['currentUserSubject'].next(mockUser);
       service.logout();
       expect(service.isAuthenticated()).toBe(false);
     });
@@ -99,161 +120,117 @@ describe('AuthService', () => {
 
   describe('hasRole', () => {
     it('should return true if user has the specified role', () => {
-      service.login('admin@laboratorios.cl', 'Admin123!');
+      service['currentUserSubject'].next(mockUser);
       expect(service.hasRole('ADMINISTRADOR')).toBe(true);
     });
 
     it('should return false if user does not have the specified role', () => {
-      service.login('admin@laboratorios.cl', 'Admin123!');
+      service['currentUserSubject'].next(mockUser);
       expect(service.hasRole('MEDICO')).toBe(false);
     });
 
     it('should return false if no user is logged in', () => {
-      expect(service.hasRole('ADMINISTRADOR')).toBe(false);
+      expect(service.hasRole('ADMINISTRADOR')).toBeFalsy();
     });
   });
 
   describe('register', () => {
-    it('should register a new user successfully', () => {
+    it('should register a new user successfully', (done) => {
       const newUser: Omit<User, 'id'> = {
         nombre: 'Test',
         apellido: 'User',
-        rut: '55555555-5',
         email: 'test@laboratorios.cl',
         password: 'Test123!',
+        rut: '55555555-5',
+        rol: 'PACIENTE',
         telefono: '+56933333333',
-        direccion: 'Test Address',
-        fechaNacimiento: '2000-01-01',
-        rol: 'PACIENTE'
+        direccion: 'Test Address 456',
+        fechaNacimiento: '2000-01-01'
       };
 
-      const result = service.register(newUser);
-      expect(result).toBe(true);
+      service.register(newUser).subscribe(result => {
+        expect(result).toBe(true);
+        done();
+      });
+
+      const req = httpMock.expectOne(`${API_CONFIG.userService}/auth/register`);
+      expect(req.request.method).toBe('POST');
+      req.flush({ ...newUser, id: 2 });
     });
 
-    it('should fail to register user with duplicate email', () => {
-      const duplicateUser: Omit<User, 'id'> = {
-        nombre: 'Duplicate',
-        apellido: 'User',
-        rut: '66666666-6',
-        email: 'admin@laboratorios.cl',
+    it('should return false on registration error', (done) => {
+      const newUser: Omit<User, 'id'> = {
+        nombre: 'Test',
+        apellido: 'Duplicate',
+        email: 'duplicate@laboratorios.cl',
         password: 'Test123!',
+        rut: '55555555-5',
+        rol: 'PACIENTE',
         telefono: '+56933333333',
         direccion: 'Test Address',
-        fechaNacimiento: '2000-01-01',
-        rol: 'PACIENTE'
+        fechaNacimiento: '2000-01-01'
       };
 
-      const result = service.register(duplicateUser);
-      expect(result).toBe(false);
-    });
+      service.register(newUser).subscribe(result => {
+        expect(result).toBe(false);
+        done();
+      });
 
-    it('should fail to register user with duplicate RUT', () => {
-      const duplicateUser: Omit<User, 'id'> = {
-        nombre: 'Duplicate',
-        apellido: 'User',
-        rut: '11111111-1',
-        email: 'unique@laboratorios.cl',
-        password: 'Test123!',
-        telefono: '+56933333333',
-        direccion: 'Test Address',
-        fechaNacimiento: '2000-01-01',
-        rol: 'PACIENTE'
-      };
-
-      const result = service.register(duplicateUser);
-      expect(result).toBe(false);
+      const req = httpMock.expectOne(`${API_CONFIG.userService}/auth/register`);
+      req.flush({ message: 'Email already exists' }, { status: 400, statusText: 'Bad Request' });
     });
   });
 
   describe('updateProfile', () => {
-    it('should update user profile successfully', () => {
-      service.login('admin@laboratorios.cl', 'Admin123!');
-      const currentUser = service.getCurrentUser()!;
+    it('should update profile successfully for current user', (done) => {
+      service['currentUserSubject'].next(mockUser);
+      const updatedUser: User = { ...mockUser, nombre: 'Updated Name' };
 
-      const updatedUser: User = {
-        ...currentUser,
-        nombre: 'Updated Name',
-        telefono: '+56999999999'
-      };
+      service.updateProfile(updatedUser).subscribe(result => {
+        expect(result).toBe(true);
+        expect(service.getCurrentUser()?.nombre).toBe('Updated Name');
+        done();
+      });
 
-      const result = service.updateProfile(updatedUser);
-      expect(result).toBe(true);
-      expect(service.getCurrentUser()?.nombre).toBe('Updated Name');
-      expect(service.getCurrentUser()?.telefono).toBe('+56999999999');
+      const req = httpMock.expectOne(`${API_CONFIG.userService}/${mockUser.id}`);
+      expect(req.request.method).toBe('PUT');
+      req.flush(updatedUser);
     });
 
-    it('should update localStorage when updating current user profile', () => {
-      service.login('admin@laboratorios.cl', 'Admin123!');
-      const currentUser = service.getCurrentUser()!;
+    it('should return false on update error', (done) => {
+      const updatedUser: User = { ...mockUser, nombre: 'Updated' };
 
-      const updatedUser: User = {
-        ...currentUser,
-        nombre: 'Updated Name'
-      };
+      service.updateProfile(updatedUser).subscribe(result => {
+        expect(result).toBe(false);
+        done();
+      });
 
-      service.updateProfile(updatedUser);
-
-      const stored = localStorage.getItem('currentUser');
-      const storedUser = JSON.parse(stored!);
-      expect(storedUser.nombre).toBe('Updated Name');
-    });
-
-    it('should fail to update non-existent user', () => {
-      const nonExistentUser: User = {
-        id: 999,
-        nombre: 'Non',
-        apellido: 'Existent',
-        rut: '99999999-9',
-        email: 'nonexistent@laboratorios.cl',
-        password: 'Test123!',
-        telefono: '+56933333333',
-        direccion: 'Test Address',
-        fechaNacimiento: '2000-01-01',
-        rol: 'PACIENTE'
-      };
-
-      const result = service.updateProfile(nonExistentUser);
-      expect(result).toBe(false);
+      const req = httpMock.expectOne(`${API_CONFIG.userService}/${mockUser.id}`);
+      req.flush({ message: 'Update failed' }, { status: 500, statusText: 'Internal Server Error' });
     });
   });
 
   describe('resetPassword', () => {
-    it('should reset password successfully', () => {
-      const result = service.resetPassword('admin@laboratorios.cl', 'NewPassword123!');
-      expect(result).toBe(true);
+    it('should reset password successfully', (done) => {
+      service.resetPassword('admin@laboratorios.cl', 'NewPass123!').subscribe(result => {
+        expect(result).toBe(true);
+        done();
+      });
 
-      const loginResult = service.login('admin@laboratorios.cl', 'NewPassword123!');
-      expect(loginResult).toBe(true);
+      const req = httpMock.expectOne(`${API_CONFIG.userService}/auth/reset-password`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual({ email: 'admin@laboratorios.cl', newPassword: 'NewPass123!' });
+      req.flush({ message: 'Password reset successfully' });
     });
 
-    it('should fail to reset password for non-existent email', () => {
-      const result = service.resetPassword('nonexistent@laboratorios.cl', 'NewPassword123!');
-      expect(result).toBe(false);
-    });
-  });
+    it('should return false on reset password error', (done) => {
+      service.resetPassword('unknown@laboratorios.cl', 'NewPass123!').subscribe(result => {
+        expect(result).toBe(false);
+        done();
+      });
 
-  describe('localStorage persistence', () => {
-    it('should restore user from localStorage on service creation', () => {
-      const user: User = {
-        id: 1,
-        nombre: 'Test',
-        apellido: 'User',
-        rut: '11111111-1',
-        email: 'test@laboratorios.cl',
-        password: 'Test123!',
-        telefono: '+56933333333',
-        direccion: 'Test Address',
-        fechaNacimiento: '2000-01-01',
-        rol: 'ADMINISTRADOR'
-      };
-
-      localStorage.setItem('currentUser', JSON.stringify(user));
-
-      const newService = new AuthService();
-      expect(newService.getCurrentUser()).toBeTruthy();
-      expect(newService.getCurrentUser()?.email).toBe('test@laboratorios.cl');
-      expect(newService.isAuthenticated()).toBe(true);
+      const req = httpMock.expectOne(`${API_CONFIG.userService}/auth/reset-password`);
+      req.flush({ message: 'User not found' }, { status: 404, statusText: 'Not Found' });
     });
   });
 });

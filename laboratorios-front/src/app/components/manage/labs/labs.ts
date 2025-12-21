@@ -39,8 +39,13 @@ export class Labs implements OnInit {
   }
 
   loadLabs(): void {
-    this.labs = this.labService.getAll();
-    this.filteredLabs = this.labs;
+    this.labService.getAll().subscribe({
+      next: (labs) => {
+        this.labs = labs;
+        this.filteredLabs = labs;
+      },
+      error: (err) => console.error('Error al cargar laboratorios:', err)
+    });
   }
 
   onSearch(event: Event): void {
@@ -75,20 +80,31 @@ export class Labs implements OnInit {
 
       if (this.editingLab) {
         labData.id = this.editingLab.id;
-        this.labService.update(labData.id, labData);
+        this.labService.update(labData.id, labData).subscribe({
+          next: () => {
+            this.loadLabs();
+            this.closeModal();
+          },
+          error: (err) => console.error('Error al actualizar laboratorio:', err)
+        });
       } else {
-        this.labService.create(labData);
+        this.labService.create(labData).subscribe({
+          next: () => {
+            this.loadLabs();
+            this.closeModal();
+          },
+          error: (err) => console.error('Error al crear laboratorio:', err)
+        });
       }
-
-      this.loadLabs();
-      this.closeModal();
     }
   }
 
   deleteLab(id: number): void {
     if (confirm('¿Está seguro de eliminar este laboratorio?')) {
-      this.labService.delete(id);
-      this.loadLabs();
+      this.labService.delete(id).subscribe({
+        next: () => this.loadLabs(),
+        error: (err) => console.error('Error al eliminar laboratorio:', err)
+      });
     }
   }
 

@@ -1,82 +1,74 @@
 import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { Result } from '../models/result.model';
+import { API_CONFIG } from '../config/api.config';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ResultService {
-  private results: Result[] = [
-    {
-      id: 1,
-      patientId: 3,
-      patientName: 'María González',
-      labId: 1,
-      labName: 'Laboratorio Central Santiago',
-      testType: 'Hemograma Completo',
-      result: 'Normal',
-      date: '2025-01-15',
-      notes: 'Todos los valores dentro del rango normal'
-    },
-    {
-      id: 2,
-      patientId: 3,
-      patientName: 'María González',
-      labId: 2,
-      labName: 'Laboratorio Clínico Viña del Mar',
-      testType: 'Perfil Lipídico',
-      result: 'Colesterol elevado',
-      date: '2025-01-10',
-      notes: 'Se recomienda dieta y control en 3 meses'
-    },
-    {
-      id: 3,
-      patientId: 3,
-      patientName: 'María González',
-      labId: 1,
-      labName: 'Laboratorio Central Santiago',
-      testType: 'Glucosa en Ayunas',
-      result: 'Normal - 95 mg/dL',
-      date: '2025-01-20',
-      notes: ''
-    }
-  ];
 
-  getAll(): Result[] {
-    return [...this.results];
+  constructor(private http: HttpClient) {}
+
+  getAll(): Observable<Result[]> {
+    return this.http.get<Result[]>(API_CONFIG.resultsService)
+      .pipe(
+        catchError(error => {
+          console.error('Error al obtener resultados:', error);
+          return of([]);
+        })
+      );
   }
 
-  getById(id: number): Result | undefined {
-    return this.results.find(r => r.id === id);
+  getById(id: number): Observable<Result | undefined> {
+    return this.http.get<Result>(`${API_CONFIG.resultsService}/${id}`)
+      .pipe(
+        catchError(error => {
+          console.error('Error al obtener resultado:', error);
+          return of(undefined);
+        })
+      );
   }
 
-  getByPatientId(patientId: number): Result[] {
-    return this.results.filter(r => r.patientId === patientId);
+  getByPatientId(patientId: number): Observable<Result[]> {
+    return this.http.get<Result[]>(`${API_CONFIG.resultsService}/patient/${patientId}`)
+      .pipe(
+        catchError(error => {
+          console.error('Error al obtener resultados del paciente:', error);
+          return of([]);
+        })
+      );
   }
 
-  create(result: Omit<Result, 'id'>): Result {
-    const newResult: Result = {
-      ...result,
-      id: Math.max(...this.results.map(r => r.id)) + 1
-    };
-    this.results.push(newResult);
-    return newResult;
+  create(resultData: Omit<Result, 'id'>): Observable<Result> {
+    return this.http.post<Result>(API_CONFIG.resultsService, resultData)
+      .pipe(
+        catchError(error => {
+          console.error('Error al crear resultado:', error);
+          throw error;
+        })
+      );
   }
 
-  update(id: number, result: Result): boolean {
-    const index = this.results.findIndex(r => r.id === id);
-    if (index !== -1) {
-      this.results[index] = { ...result, id };
-      return true;
-    }
-    return false;
+  update(id: number, result: Result): Observable<Result> {
+    return this.http.put<Result>(`${API_CONFIG.resultsService}/${id}`, result)
+      .pipe(
+        catchError(error => {
+          console.error('Error al actualizar resultado:', error);
+          throw error;
+        })
+      );
   }
 
-  delete(id: number): boolean {
-    const index = this.results.findIndex(r => r.id === id);
-    if (index !== -1) {
-      this.results.splice(index, 1);
-      return true;
-    }
-    return false;
+  delete(id: number): Observable<void> {
+    return this.http.delete<void>(`${API_CONFIG.resultsService}/${id}`)
+      .pipe(
+        catchError(error => {
+          console.error('Error al eliminar resultado:', error);
+          throw error;
+        })
+      );
   }
 }

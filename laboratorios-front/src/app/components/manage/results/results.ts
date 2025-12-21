@@ -51,10 +51,23 @@ export class Results implements OnInit {
   }
 
   loadData(): void {
-    this.results = this.resultService.getAll();
-    this.filteredResults = this.results;
-    this.labs = this.labService.getAll();
-    this.patients = this.userService.getAll().filter(u => u.rol === 'PACIENTE');
+    this.resultService.getAll().subscribe({
+      next: (results) => {
+        this.results = results;
+        this.filteredResults = results;
+      },
+      error: (err) => console.error('Error al cargar resultados:', err)
+    });
+
+    this.labService.getAll().subscribe({
+      next: (labs) => this.labs = labs,
+      error: (err) => console.error('Error al cargar laboratorios:', err)
+    });
+
+    this.userService.getAll().subscribe({
+      next: (users) => this.patients = users.filter(u => u.rol === 'PACIENTE'),
+      error: (err) => console.error('Error al cargar usuarios:', err)
+    });
   }
 
   onSearch(event: Event): void {
@@ -112,20 +125,31 @@ export class Results implements OnInit {
       };
 
       if (this.editingResult) {
-        this.resultService.update(this.editingResult.id, resultData);
+        this.resultService.update(this.editingResult.id, resultData).subscribe({
+          next: () => {
+            this.loadData();
+            this.closeModal();
+          },
+          error: (err) => console.error('Error al actualizar resultado:', err)
+        });
       } else {
-        this.resultService.create(resultData);
+        this.resultService.create(resultData).subscribe({
+          next: () => {
+            this.loadData();
+            this.closeModal();
+          },
+          error: (err) => console.error('Error al crear resultado:', err)
+        });
       }
-
-      this.loadData();
-      this.closeModal();
     }
   }
 
   deleteResult(id: number): void {
     if (confirm('¿Está seguro de eliminar este resultado?')) {
-      this.resultService.delete(id);
-      this.loadData();
+      this.resultService.delete(id).subscribe({
+        next: () => this.loadData(),
+        error: (err) => console.error('Error al eliminar resultado:', err)
+      });
     }
   }
 

@@ -53,8 +53,13 @@ export class Users implements OnInit {
   }
 
   loadUsers(): void {
-    this.users = this.userService.getAll();
-    this.filteredUsers = this.users;
+    this.userService.getAll().subscribe({
+      next: (users) => {
+        this.users = users;
+        this.filteredUsers = users;
+      },
+      error: (err) => console.error('Error al cargar usuarios:', err)
+    });
   }
 
   onSearch(event: Event): void {
@@ -92,20 +97,31 @@ export class Users implements OnInit {
 
       if (this.editingUser) {
         userData.id = this.editingUser.id;
-        this.userService.update(userData.id, userData);
+        this.userService.update(userData.id, userData).subscribe({
+          next: () => {
+            this.loadUsers();
+            this.closeModal();
+          },
+          error: (err) => console.error('Error al actualizar usuario:', err)
+        });
       } else {
-        this.userService.create(userData);
+        this.userService.create(userData).subscribe({
+          next: () => {
+            this.loadUsers();
+            this.closeModal();
+          },
+          error: (err) => console.error('Error al crear usuario:', err)
+        });
       }
-
-      this.loadUsers();
-      this.closeModal();
     }
   }
 
   deleteUser(id: number): void {
     if (confirm('¿Está seguro de eliminar este usuario?')) {
-      this.userService.delete(id);
-      this.loadUsers();
+      this.userService.delete(id).subscribe({
+        next: () => this.loadUsers(),
+        error: (err) => console.error('Error al eliminar usuario:', err)
+      });
     }
   }
 

@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -36,20 +37,32 @@ public class UserService {
         User user = new User();
         user.setEmail(requestDTO.getEmail());
         user.setPasswordHash(hashPassword(requestDTO.getPassword()));
-        user.setFullName(requestDTO.getFullName());
+        // Combinar nombre y apellido en fullName
+        user.setFullName(requestDTO.getNombre() + " " + requestDTO.getApellido());
 
-        if (requestDTO.getRoleIds() != null && !requestDTO.getRoleIds().isEmpty()) {
+        // Mapear rol string a Role entity
+        if (requestDTO.getRol() != null && !requestDTO.getRol().isEmpty()) {
+            Role role = roleRepository.findByName(requestDTO.getRol())
+                .orElseGet(() -> {
+                    // Si no existe el rol, crear uno por defecto (PACIENTE)
+                    return roleRepository.findByName("PACIENTE")
+                        .orElseThrow(() -> new ResourceNotFoundException("Rol PACIENTE no encontrado"));
+                });
             Set<Role> roles = new HashSet<>();
-            for (Long roleId : requestDTO.getRoleIds()) {
-                Role role = roleRepository.findById(roleId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Rol no encontrado con id: " + roleId));
-                roles.add(role);
-            }
+            roles.add(role);
             user.setRoles(roles);
         }
 
         User savedUser = userRepository.save(user);
         return mapToResponseDTO(savedUser);
+    }
+
+    @Transactional(readOnly = true)
+    public List<UserResponseDTO> getAllUsers() {
+        List<User> users = userRepository.findAll();
+        return users.stream()
+            .map(this::mapToResponseDTO)
+            .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
@@ -73,15 +86,18 @@ public class UserService {
         if (requestDTO.getPassword() != null && !requestDTO.getPassword().isEmpty()) {
             user.setPasswordHash(hashPassword(requestDTO.getPassword()));
         }
-        user.setFullName(requestDTO.getFullName());
+        // Combinar nombre y apellido en fullName
+        user.setFullName(requestDTO.getNombre() + " " + requestDTO.getApellido());
 
-        if (requestDTO.getRoleIds() != null) {
+        // Mapear rol string a Role entity
+        if (requestDTO.getRol() != null && !requestDTO.getRol().isEmpty()) {
+            Role role = roleRepository.findByName(requestDTO.getRol())
+                .orElseGet(() -> {
+                    return roleRepository.findByName("PACIENTE")
+                        .orElseThrow(() -> new ResourceNotFoundException("Rol PACIENTE no encontrado"));
+                });
             Set<Role> roles = new HashSet<>();
-            for (Long roleId : requestDTO.getRoleIds()) {
-                Role role = roleRepository.findById(roleId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Rol no encontrado con id: " + roleId));
-                roles.add(role);
-            }
+            roles.add(role);
             user.setRoles(roles);
         }
 
@@ -101,12 +117,17 @@ public class UserService {
         UserResponseDTO dto = new UserResponseDTO();
         dto.setId(user.getId());
         dto.setEmail(user.getEmail());
-        dto.setFullName(user.getFullName());
 
-        Set<RoleDTO> roleDTOs = user.getRoles().stream()
-            .map(role -> new RoleDTO(role.getId(), role.getName()))
-            .collect(Collectors.toSet());
-        dto.setRoles(roleDTOs);
+        // Separar fullName en nombre y apellido
+        String[] nombrePartes = user.getFullName().split(" ", 2);
+        dto.setNombre(nombrePartes.length > 0 ? nombrePartes[0] : "");
+        dto.setApellido(nombrePartes.length > 1 ? nombrePartes[1] : "");
+
+        // Obtener el primer rol como string
+        dto.setRol(user.getRoles().stream()
+            .findFirst()
+            .map(Role::getName)
+            .orElse("PACIENTE"));
 
         return dto;
     }
@@ -123,12 +144,18 @@ public class UserService {
         LoginResponseDTO response = new LoginResponseDTO();
         response.setId(user.getId());
         response.setEmail(user.getEmail());
-        response.setFullName(user.getFullName());
 
-        Set<RoleDTO> roleDTOs = user.getRoles().stream()
-            .map(role -> new RoleDTO(role.getId(), role.getName()))
-            .collect(Collectors.toSet());
-        response.setRoles(roleDTOs);
+        // Separar fullName en nombre y apellido
+        String[] nombrePartes = user.getFullName().split(" ", 2);
+        response.setNombre(nombrePartes.length > 0 ? nombrePartes[0] : "");
+        response.setApellido(nombrePartes.length > 1 ? nombrePartes[1] : "");
+
+        // Obtener el primer rol como string
+        response.setRol(user.getRoles().stream()
+            .findFirst()
+            .map(Role::getName)
+            .orElse("PACIENTE"));
+
         response.setMessage("Inicio de sesión exitoso");
 
         return response;

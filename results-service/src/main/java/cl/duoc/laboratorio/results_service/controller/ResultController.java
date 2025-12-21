@@ -35,6 +35,12 @@ public class ResultController {
         return new ResponseEntity<>(createdResult, HttpStatus.CREATED);
     }
 
+    @GetMapping
+    public ResponseEntity<List<ResultResponseDTO>> getAllResults() {
+        List<ResultResponseDTO> results = resultService.getAllResults();
+        return ResponseEntity.ok(results);
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ResultResponseDTO> getResultById(@PathVariable Long id) {
         ResultResponseDTO result = resultService.getResultById(id);

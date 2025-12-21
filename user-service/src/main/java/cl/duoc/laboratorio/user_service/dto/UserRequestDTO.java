@@ -7,12 +7,16 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.Set;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserRequestDTO {
+
+    @NotBlank(message = "El nombre es obligatorio")
+    private String nombre;
+
+    @NotBlank(message = "El apellido es obligatorio")
+    private String apellido;
 
     @NotBlank(message = "El email es obligatorio")
     @Email(message = "El email debe ser válido")
@@ -22,9 +26,14 @@ public class UserRequestDTO {
     @Size(min = 6, message = "La contraseña debe tener al menos 6 caracteres")
     private String password;
 
-    @NotBlank(message = "El nombre completo es obligatorio")
-    @Size(max = 150, message = "El nombre completo no puede exceder 150 caracteres")
-    private String fullName;
+    private String rut;
 
-    private Set<Long> roleIds;
+    @NotBlank(message = "El rol es obligatorio")
+    private String rol;
+
+    private String telefono;
+
+    private String direccion;
+
+    private String fechaNacimiento;
 }

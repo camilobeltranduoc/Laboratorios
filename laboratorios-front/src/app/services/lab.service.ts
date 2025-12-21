@@ -1,49 +1,64 @@
 import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { Lab } from '../models/lab.model';
+import { API_CONFIG } from '../config/api.config';
 
 @Injectable({
   providedIn: 'root'
 })
 export class LabService {
-  private labs: Lab[] = [
-    { id: 1, name: 'Laboratorio Central Santiago' },
-    { id: 2, name: 'Laboratorio Clínico Viña del Mar' },
-    { id: 3, name: 'Laboratorio de Análisis Concepción' },
-    { id: 4, name: 'Laboratorio Especializado La Serena' }
-  ];
 
-  getAll(): Lab[] {
-    return [...this.labs];
+  constructor(private http: HttpClient) {}
+
+  getAll(): Observable<Lab[]> {
+    return this.http.get<Lab[]>(API_CONFIG.labsService)
+      .pipe(
+        catchError(error => {
+          console.error('Error al obtener laboratorios:', error);
+          return of([]);
+        })
+      );
   }
 
-  getById(id: number): Lab | undefined {
-    return this.labs.find(l => l.id === id);
+  getById(id: number): Observable<Lab | undefined> {
+    return this.http.get<Lab>(`${API_CONFIG.labsService}/${id}`)
+      .pipe(
+        catchError(error => {
+          console.error('Error al obtener laboratorio:', error);
+          return of(undefined);
+        })
+      );
   }
 
-  create(lab: Omit<Lab, 'id'>): Lab {
-    const newLab: Lab = {
-      ...lab,
-      id: Math.max(...this.labs.map(l => l.id)) + 1
-    };
-    this.labs.push(newLab);
-    return newLab;
+  create(labData: Omit<Lab, 'id'>): Observable<Lab> {
+    return this.http.post<Lab>(API_CONFIG.labsService, labData)
+      .pipe(
+        catchError(error => {
+          console.error('Error al crear laboratorio:', error);
+          throw error;
+        })
+      );
   }
 
-  update(id: number, lab: Lab): boolean {
-    const index = this.labs.findIndex(l => l.id === id);
-    if (index !== -1) {
-      this.labs[index] = { ...lab, id };
-      return true;
-    }
-    return false;
+  update(id: number, lab: Lab): Observable<Lab> {
+    return this.http.put<Lab>(`${API_CONFIG.labsService}/${id}`, lab)
+      .pipe(
+        catchError(error => {
+          console.error('Error al actualizar laboratorio:', error);
+          throw error;
+        })
+      );
   }
 
-  delete(id: number): boolean {
-    const index = this.labs.findIndex(l => l.id === id);
-    if (index !== -1) {
-      this.labs.splice(index, 1);
-      return true;
-    }
-    return false;
+  delete(id: number): Observable<void> {
+    return this.http.delete<void>(`${API_CONFIG.labsService}/${id}`)
+      .pipe(
+        catchError(error => {
+          console.error('Error al eliminar laboratorio:', error);
+          throw error;
+        })
+      );
   }
 }

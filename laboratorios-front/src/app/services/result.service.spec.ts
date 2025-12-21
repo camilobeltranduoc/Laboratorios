@@ -1,13 +1,47 @@
 import { TestBed } from '@angular/core/testing';
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { ResultService } from './result.service';
 import { Result } from '../models/result.model';
+import { API_CONFIG } from '../config/api.config';
 
 describe('ResultService', () => {
   let service: ResultService;
+  let httpMock: HttpTestingController;
+
+  const mockResults: Result[] = [
+    {
+      id: 1,
+      patientId: 1,
+      patientName: 'María González',
+      labId: 1,
+      labName: 'Laboratorio Central Santiago',
+      testType: 'Hemograma Completo',
+      result: 'Normal',
+      date: '2025-01-15'
+    },
+    {
+      id: 2,
+      patientId: 2,
+      patientName: 'Carlos Pérez',
+      labId: 2,
+      labName: 'Laboratorio Clínico Providencia',
+      testType: 'Glicemia',
+      result: '95 mg/dL',
+      date: '2025-01-16'
+    }
+  ];
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
+    TestBed.configureTestingModule({
+      imports: [HttpClientTestingModule],
+      providers: [ResultService]
+    });
     service = TestBed.inject(ResultService);
+    httpMock = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    httpMock.verify();
   });
 
   it('should be created', () => {
@@ -15,319 +49,196 @@ describe('ResultService', () => {
   });
 
   describe('getAll', () => {
-    it('should return all results', () => {
-      const results = service.getAll();
-      expect(results.length).toBe(3);
+    it('should return all results', (done) => {
+      service.getAll().subscribe(results => {
+        expect(results.length).toBe(2);
+        expect(results).toEqual(mockResults);
+        done();
+      });
+
+      const req = httpMock.expectOne(API_CONFIG.resultsService);
+      expect(req.request.method).toBe('GET');
+      req.flush(mockResults);
     });
 
-    it('should return a copy of the results array', () => {
-      const results1 = service.getAll();
-      const results2 = service.getAll();
-      expect(results1).not.toBe(results2);
-      expect(results1).toEqual(results2);
-    });
+    it('should return empty array on error', (done) => {
+      service.getAll().subscribe(results => {
+        expect(results).toEqual([]);
+        done();
+      });
 
-    it('should contain initial sample data', () => {
-      const results = service.getAll();
-      expect(results[0].patientName).toBe('María González');
-      expect(results[0].testType).toBe('Hemograma Completo');
+      const req = httpMock.expectOne(API_CONFIG.resultsService);
+      req.flush({ message: 'Error' }, { status: 500, statusText: 'Internal Server Error' });
     });
   });
 
   describe('getById', () => {
-    it('should return result when found', () => {
-      const result = service.getById(1);
-      expect(result).toBeTruthy();
-      expect(result?.testType).toBe('Hemograma Completo');
-      expect(result?.patientName).toBe('María González');
+    it('should return result when found', (done) => {
+      service.getById(1).subscribe(result => {
+        expect(result).toEqual(mockResults[0]);
+        done();
+      });
+
+      const req = httpMock.expectOne(`${API_CONFIG.resultsService}/1`);
+      expect(req.request.method).toBe('GET');
+      req.flush(mockResults[0]);
     });
 
-    it('should return undefined when result not found', () => {
-      const result = service.getById(999);
-      expect(result).toBeUndefined();
-    });
+    it('should return undefined when result not found', (done) => {
+      service.getById(999).subscribe(result => {
+        expect(result).toBeUndefined();
+        done();
+      });
 
-    it('should return correct result for each ID', () => {
-      const result1 = service.getById(1);
-      const result2 = service.getById(2);
-      const result3 = service.getById(3);
-
-      expect(result1?.testType).toBe('Hemograma Completo');
-      expect(result2?.testType).toBe('Perfil Lipídico');
-      expect(result3?.testType).toBe('Glucosa en Ayunas');
+      const req = httpMock.expectOne(`${API_CONFIG.resultsService}/999`);
+      req.flush({ message: 'Result not found' }, { status: 404, statusText: 'Not Found' });
     });
   });
 
   describe('getByPatientId', () => {
-    it('should return all results for a specific patient', () => {
-      const results = service.getByPatientId(3);
-      expect(results.length).toBe(3);
-      results.forEach(result => {
-        expect(result.patientId).toBe(3);
-        expect(result.patientName).toBe('María González');
+    it('should return results for patient', (done) => {
+      const patientResults = [mockResults[0]];
+
+      service.getByPatientId(1).subscribe(results => {
+        expect(results).toEqual(patientResults);
+        done();
       });
+
+      const req = httpMock.expectOne(`${API_CONFIG.resultsService}/patient/1`);
+      expect(req.request.method).toBe('GET');
+      req.flush(patientResults);
     });
 
-    it('should return empty array when patient has no results', () => {
-      const results = service.getByPatientId(999);
-      expect(results).toEqual([]);
-      expect(results.length).toBe(0);
+    it('should return empty array when patient has no results', (done) => {
+      service.getByPatientId(999).subscribe(results => {
+        expect(results).toEqual([]);
+        done();
+      });
+
+      const req = httpMock.expectOne(`${API_CONFIG.resultsService}/patient/999`);
+      req.flush([]);
     });
 
-    it('should filter results correctly by patient ID', () => {
-      const newResult: Omit<Result, 'id'> = {
-        patientId: 5,
-        patientName: 'Test Patient',
-        labId: 1,
-        labName: 'Test Lab',
-        testType: 'Test Type',
-        result: 'Test Result',
-        date: '2025-01-25',
-        notes: 'Test notes'
-      };
-      service.create(newResult);
+    it('should return empty array on error', (done) => {
+      service.getByPatientId(1).subscribe(results => {
+        expect(results).toEqual([]);
+        done();
+      });
 
-      const patient3Results = service.getByPatientId(3);
-      const patient5Results = service.getByPatientId(5);
-
-      expect(patient3Results.length).toBe(3);
-      expect(patient5Results.length).toBe(1);
-      expect(patient5Results[0].patientName).toBe('Test Patient');
+      const req = httpMock.expectOne(`${API_CONFIG.resultsService}/patient/1`);
+      req.flush({ message: 'Error' }, { status: 500, statusText: 'Internal Server Error' });
     });
   });
 
   describe('create', () => {
-    it('should create a new result successfully', () => {
-      const newResult: Omit<Result, 'id'> = {
-        patientId: 1,
-        patientName: 'Test Patient',
+    it('should create a new result successfully', (done) => {
+      const newResultData: Omit<Result, 'id'> = {
+        patientId: 3,
+        patientName: 'Juan López',
         labId: 1,
-        labName: 'Test Lab',
-        testType: 'Test Completo',
-        result: 'Normal',
-        date: '2025-01-25',
-        notes: 'Test notes'
+        labName: 'Laboratorio Central Santiago',
+        testType: 'Perfil Lipídico',
+        result: 'Pendiente',
+        date: '2025-01-20'
       };
 
-      const initialCount = service.getAll().length;
-      const createdResult = service.create(newResult);
+      const createdResult = { ...newResultData, id: 3 };
 
-      expect(createdResult).toBeTruthy();
-      expect(createdResult.id).toBeDefined();
-      expect(createdResult.testType).toBe('Test Completo');
-      expect(createdResult.patientName).toBe('Test Patient');
-      expect(service.getAll().length).toBe(initialCount + 1);
+      service.create(newResultData).subscribe(result => {
+        expect(result).toEqual(createdResult);
+        done();
+      });
+
+      const req = httpMock.expectOne(API_CONFIG.resultsService);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual(newResultData);
+      req.flush(createdResult);
     });
 
-    it('should assign incremental ID to new result', () => {
-      const results = service.getAll();
-      const maxId = Math.max(...results.map(r => r.id));
-
-      const newResult: Omit<Result, 'id'> = {
-        patientId: 2,
-        patientName: 'Another Patient',
-        labId: 2,
-        labName: 'Another Lab',
-        testType: 'Another Test',
-        result: 'Pending',
-        date: '2025-01-26',
-        notes: ''
+    it('should throw error on creation failure', (done) => {
+      const newResultData: Omit<Result, 'id'> = {
+        patientId: 999,
+        patientName: 'Invalid',
+        labId: 1,
+        labName: 'Lab',
+        testType: 'Test',
+        result: 'Result',
+        date: '2025-01-20'
       };
 
-      const createdResult = service.create(newResult);
-      expect(createdResult.id).toBe(maxId + 1);
-    });
+      service.create(newResultData).subscribe({
+        next: () => fail('should have failed'),
+        error: (error) => {
+          expect(error).toBeTruthy();
+          done();
+        }
+      });
 
-    it('should preserve all result properties when creating', () => {
-      const newResult: Omit<Result, 'id'> = {
-        patientId: 10,
-        patientName: 'John Doe',
-        labId: 3,
-        labName: 'Lab Concepción',
-        testType: 'Radiografía',
-        result: 'Sin hallazgos',
-        date: '2025-02-01',
-        notes: 'Control de rutina'
-      };
-
-      const createdResult = service.create(newResult);
-      expect(createdResult.patientId).toBe(10);
-      expect(createdResult.patientName).toBe('John Doe');
-      expect(createdResult.labId).toBe(3);
-      expect(createdResult.labName).toBe('Lab Concepción');
-      expect(createdResult.testType).toBe('Radiografía');
-      expect(createdResult.result).toBe('Sin hallazgos');
-      expect(createdResult.date).toBe('2025-02-01');
-      expect(createdResult.notes).toBe('Control de rutina');
+      const req = httpMock.expectOne(API_CONFIG.resultsService);
+      req.flush({ message: 'Patient not found' }, { status: 404, statusText: 'Not Found' });
     });
   });
 
   describe('update', () => {
-    it('should update existing result successfully', () => {
+    it('should update existing result successfully', (done) => {
       const updatedResult: Result = {
-        id: 1,
-        patientId: 3,
-        patientName: 'María González',
-        labId: 1,
-        labName: 'Laboratorio Central Santiago',
-        testType: 'Hemograma Completo',
-        result: 'Actualizado - Anemia leve',
-        date: '2025-01-15',
-        notes: 'Revisión de resultados'
+        ...mockResults[0],
+        result: 'Anemia leve',
+        notes: 'Requiere seguimiento'
       };
 
-      const success = service.update(1, updatedResult);
-      expect(success).toBe(true);
+      service.update(1, updatedResult).subscribe(result => {
+        expect(result.result).toBe('Anemia leve');
+        done();
+      });
 
-      const result = service.getById(1);
-      expect(result?.result).toBe('Actualizado - Anemia leve');
-      expect(result?.notes).toBe('Revisión de resultados');
+      const req = httpMock.expectOne(`${API_CONFIG.resultsService}/1`);
+      expect(req.request.method).toBe('PUT');
+      req.flush(updatedResult);
     });
 
-    it('should return false when updating non-existent result', () => {
+    it('should throw error when updating non-existent result', (done) => {
       const updatedResult: Result = {
-        id: 999,
-        patientId: 1,
-        patientName: 'Non Existent',
-        labId: 1,
-        labName: 'Test',
-        testType: 'Test',
-        result: 'Test',
-        date: '2025-01-01',
-        notes: ''
+        ...mockResults[0],
+        id: 999
       };
 
-      const success = service.update(999, updatedResult);
-      expect(success).toBe(false);
-    });
+      service.update(999, updatedResult).subscribe({
+        next: () => fail('should have failed'),
+        error: (error) => {
+          expect(error).toBeTruthy();
+          done();
+        }
+      });
 
-    it('should preserve the ID when updating', () => {
-      const updatedResult: Result = {
-        id: 999,
-        patientId: 5,
-        patientName: 'Different Patient',
-        labId: 2,
-        labName: 'Different Lab',
-        testType: 'Different Test',
-        result: 'Different Result',
-        date: '2025-02-01',
-        notes: 'Different notes'
-      };
-
-      service.update(2, updatedResult);
-      const result = service.getById(2);
-
-      expect(result?.id).toBe(2);
-      expect(result?.patientName).toBe('Different Patient');
-      expect(result?.testType).toBe('Different Test');
-    });
-
-    it('should allow updating patient association', () => {
-      const updatedResult: Result = {
-        id: 1,
-        patientId: 10,
-        patientName: 'New Patient Name',
-        labId: 1,
-        labName: 'Laboratorio Central Santiago',
-        testType: 'Hemograma Completo',
-        result: 'Normal',
-        date: '2025-01-15',
-        notes: 'Reassigned to different patient'
-      };
-
-      service.update(1, updatedResult);
-      const result = service.getById(1);
-
-      expect(result?.patientId).toBe(10);
-      expect(result?.patientName).toBe('New Patient Name');
+      const req = httpMock.expectOne(`${API_CONFIG.resultsService}/999`);
+      req.flush({ message: 'Result not found' }, { status: 404, statusText: 'Not Found' });
     });
   });
 
   describe('delete', () => {
-    it('should delete existing result successfully', () => {
-      const initialCount = service.getAll().length;
-      const success = service.delete(1);
+    it('should delete existing result successfully', (done) => {
+      service.delete(1).subscribe(() => {
+        expect().nothing();
+        done();
+      });
 
-      expect(success).toBe(true);
-      expect(service.getAll().length).toBe(initialCount - 1);
-      expect(service.getById(1)).toBeUndefined();
+      const req = httpMock.expectOne(`${API_CONFIG.resultsService}/1`);
+      expect(req.request.method).toBe('DELETE');
+      req.flush(null);
     });
 
-    it('should return false when deleting non-existent result', () => {
-      const success = service.delete(999);
-      expect(success).toBe(false);
-    });
+    it('should throw error when deleting non-existent result', (done) => {
+      service.delete(999).subscribe({
+        next: () => fail('should have failed'),
+        error: (error) => {
+          expect(error).toBeTruthy();
+          done();
+        }
+      });
 
-    it('should not affect result count when deleting non-existent result', () => {
-      const initialCount = service.getAll().length;
-      service.delete(999);
-      expect(service.getAll().length).toBe(initialCount);
-    });
-
-    it('should remove result from patient results list', () => {
-      const patientResultsBefore = service.getByPatientId(3);
-      expect(patientResultsBefore.length).toBe(3);
-
-      service.delete(1);
-
-      const patientResultsAfter = service.getByPatientId(3);
-      expect(patientResultsAfter.length).toBe(2);
-      expect(patientResultsAfter.find(r => r.id === 1)).toBeUndefined();
-    });
-
-    it('should allow deleting multiple results sequentially', () => {
-      const initialCount = service.getAll().length;
-
-      service.delete(1);
-      service.delete(2);
-
-      expect(service.getAll().length).toBe(initialCount - 2);
-      expect(service.getById(1)).toBeUndefined();
-      expect(service.getById(2)).toBeUndefined();
-      expect(service.getById(3)).toBeTruthy();
-    });
-  });
-
-  describe('CRUD integration', () => {
-    it('should handle complete result lifecycle', () => {
-      const initialCount = service.getAll().length;
-
-      const newResult: Omit<Result, 'id'> = {
-        patientId: 7,
-        patientName: 'Integration Test Patient',
-        labId: 1,
-        labName: 'Test Lab',
-        testType: 'Integration Test',
-        result: 'Pending',
-        date: '2025-01-30',
-        notes: 'Initial notes'
-      };
-
-      const created = service.create(newResult);
-      expect(service.getAll().length).toBe(initialCount + 1);
-
-      const found = service.getById(created.id);
-      expect(found).toEqual(created);
-
-      const patientResults = service.getByPatientId(7);
-      expect(patientResults.length).toBe(1);
-      expect(patientResults[0].id).toBe(created.id);
-
-      const updatedResult: Result = {
-        ...created,
-        result: 'Completed',
-        notes: 'Test completed successfully'
-      };
-      service.update(created.id, updatedResult);
-
-      const updated = service.getById(created.id);
-      expect(updated?.result).toBe('Completed');
-      expect(updated?.notes).toBe('Test completed successfully');
-
-      service.delete(created.id);
-      expect(service.getAll().length).toBe(initialCount);
-      expect(service.getById(created.id)).toBeUndefined();
-      expect(service.getByPatientId(7).length).toBe(0);
+      const req = httpMock.expectOne(`${API_CONFIG.resultsService}/999`);
+      req.flush({ message: 'Result not found' }, { status: 404, statusText: 'Not Found' });
     });
   });
 });

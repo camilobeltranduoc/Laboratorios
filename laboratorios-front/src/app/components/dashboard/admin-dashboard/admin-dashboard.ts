@@ -34,18 +34,28 @@ export class AdminDashboard implements OnInit {
   }
 
   loadStatistics(): void {
-    const users = this.userService.getAll();
-    this.totalUsers = users.length;
+    this.userService.getAll().subscribe({
+      next: (users) => {
+        this.totalUsers = users.length;
+        this.usersByRole = {
+          ADMINISTRADOR: users.filter(u => u.rol === 'ADMINISTRADOR').length,
+          MEDICO: users.filter(u => u.rol === 'MEDICO').length,
+          PACIENTE: users.filter(u => u.rol === 'PACIENTE').length,
+          LABORATORISTA: users.filter(u => u.rol === 'LABORATORISTA').length
+        };
+      },
+      error: (err) => console.error('Error al cargar usuarios:', err)
+    });
 
-    this.usersByRole = {
-      ADMINISTRADOR: users.filter(u => u.rol === 'ADMINISTRADOR').length,
-      MEDICO: users.filter(u => u.rol === 'MEDICO').length,
-      PACIENTE: users.filter(u => u.rol === 'PACIENTE').length,
-      LABORATORISTA: users.filter(u => u.rol === 'LABORATORISTA').length
-    };
+    this.labService.getAll().subscribe({
+      next: (labs) => this.totalLabs = labs.length,
+      error: (err) => console.error('Error al cargar laboratorios:', err)
+    });
 
-    this.totalLabs = this.labService.getAll().length;
-    this.totalResults = this.resultService.getAll().length;
+    this.resultService.getAll().subscribe({
+      next: (results) => this.totalResults = results.length,
+      error: (err) => console.error('Error al cargar resultados:', err)
+    });
   }
 
   logout(): void {

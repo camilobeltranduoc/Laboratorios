@@ -42,18 +42,24 @@ export class Register {
 
   onSubmit(): void {
     if (this.registerForm.valid) {
-      const success = this.authService.register(this.registerForm.value);
-
-      if (success) {
-        this.successMessage = 'Registro exitoso. Redirigiendo al login...';
-        this.errorMessage = '';
-        setTimeout(() => {
-          this.router.navigate(['/login']);
-        }, 2000);
-      } else {
-        this.errorMessage = 'El email o RUT ya están registrados';
-        this.successMessage = '';
-      }
+      this.authService.register(this.registerForm.value).subscribe({
+        next: (success) => {
+          if (success) {
+            this.successMessage = 'Registro exitoso. Redirigiendo al login...';
+            this.errorMessage = '';
+            setTimeout(() => {
+              this.router.navigate(['/login']);
+            }, 2000);
+          } else {
+            this.errorMessage = 'El email o RUT ya están registrados';
+            this.successMessage = '';
+          }
+        },
+        error: () => {
+          this.errorMessage = 'Error al intentar registrar usuario';
+          this.successMessage = '';
+        }
+      });
     }
   }
 

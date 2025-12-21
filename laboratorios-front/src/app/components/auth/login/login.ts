@@ -29,18 +29,25 @@ export class Login {
     if (this.loginForm.valid) {
       const { email, password } = this.loginForm.value;
 
-      if (this.authService.login(email, password)) {
-        const user = this.authService.getCurrentUser();
-        if (user?.rol === 'ADMINISTRADOR') {
-          this.router.navigate(['/dashboard/admin']);
-        } else if (user?.rol === 'MEDICO') {
-          this.router.navigate(['/dashboard/medico']);
-        } else {
-          this.router.navigate(['/dashboard']);
+      this.authService.login(email, password).subscribe({
+        next: (success) => {
+          if (success) {
+            const user = this.authService.getCurrentUser();
+            if (user?.rol === 'ADMINISTRADOR') {
+              this.router.navigate(['/dashboard/admin']);
+            } else if (user?.rol === 'MEDICO') {
+              this.router.navigate(['/dashboard/medico']);
+            } else {
+              this.router.navigate(['/dashboard']);
+            }
+          } else {
+            this.errorMessage = 'Email o contraseña incorrectos';
+          }
+        },
+        error: () => {
+          this.errorMessage = 'Error al intentar iniciar sesión';
         }
-      } else {
-        this.errorMessage = 'Email o contraseña incorrectos';
-      }
+      });
     }
   }
 

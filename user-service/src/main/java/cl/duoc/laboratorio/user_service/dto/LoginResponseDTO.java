@@ -4,16 +4,15 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.Set;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class LoginResponseDTO {
 
     private Long id;
+    private String nombre;
+    private String apellido;
     private String email;
-    private String fullName;
-    private Set<RoleDTO> roles;
+    private String rol;
     private String message;
 }

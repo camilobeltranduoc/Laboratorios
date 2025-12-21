@@ -39,6 +39,14 @@ public class ResultService {
     }
 
     @Transactional(readOnly = true)
+    public List<ResultResponseDTO> getAllResults() {
+        List<Result> results = resultRepository.findAll();
+        return results.stream()
+            .map(this::mapToResponseDTO)
+            .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
     public ResultResponseDTO getResultById(Long id) {
         Result result = resultRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Resultado no encontrado con id: " + id));
